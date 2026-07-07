@@ -61,8 +61,17 @@ over 100 MB. Ask Claude to compress if unsure — ffmpeg is installed.
 
 ## Update the resume
 
-- **PDF:** replace `public/resume.pdf` (first time: just add the file — the download button activates automatically).
-- **On-page content:** edit `src/pages/resume.astro` — education/skills are plain text near the top; the EXPERIENCE section has a placeholder block with instructions in a comment.
+- **PDF:** replace `public/resume.pdf`.
+- **On-page content:** edit `src/pages/resume.astro` — education, `skills`, and
+  `experience` are plain-text lists near the top of the file. Add a job by
+  copying one `{ role, org, when, where, bullets }` block.
+
+## Embed a YouTube video
+
+One line anywhere in a project `.mdx` (the id is the part after `youtu.be/`):
+```
+<YouTube id="uuaAOCRsIaw" caption="CAPTION" />
+```
 
 ## Change the hero status line
 

@@ -7,11 +7,44 @@ import Base from '../layouts/Base.astro';
 const pdfExists = fs.existsSync(path.join(process.cwd(), 'public', 'resume.pdf'));
 
 const skills = [
-  { area: 'CAD', items: 'SolidWorks · Onshape · Fusion 360 · Autodesk Inventor' },
-  { area: 'ANALYSIS & SIMULATION', items: 'FEA · Lagrangian mechanics · numerical ODE solving · MATLAB' },
-  { area: 'PROGRAMMING', items: 'Python · C++ · C · MATLAB · LaTeX' },
-  { area: 'EMBEDDED & ELECTRONICS', items: 'ESP32 · Arduino · servo + stepper motors · PCA9685 · motor drivers' },
-  { area: 'FABRICATION', items: '3D printing (Bambu Lab) · woodworking · PVC + epoxy work · hand tools' },
+  {
+    area: 'CAD SOFTWARE',
+    items: 'SolidWorks (PDM, FEA, Sheet Metal) · AutoCAD · Onshape · Autodesk Inventor · Fusion 360',
+  },
+  {
+    area: 'LANGUAGES',
+    items: 'Python (NumPy, Matplotlib) · C++ (Arduino, ESP32) · MATLAB · C',
+  },
+  {
+    area: 'OTHER',
+    items: 'CAE · 3D printing · GD&T · electrical circuits · machining · technical drawings · Excel / Word',
+  },
+];
+
+const experience = [
+  {
+    role: 'Mechanical Team Member',
+    org: 'Waterloo Aerial Robotics Group (WARG)',
+    when: 'SEP 2025 – PRESENT',
+    where: 'WATERLOO, ON',
+    bullets: [
+      'Modelled and fabricated solutions to payload tasks on the WARG Valkyrie AEAC 2026 competition drone',
+      'Aided in the design, fabrication, and analysis of WARG Helios to create a working fixed-wing RC plane',
+      'Collaborated with mechanical, autonomy, electrical, and software teams consisting of hundreds of members',
+      'Utilized and significantly improved technical skills such as SolidWorks, FEA, and PDM',
+    ],
+  },
+  {
+    role: 'Product Development Engineer',
+    org: 'JA Canada (BEARAS JA)',
+    when: 'JAN 2025 – APR 2025',
+    where: 'TORONTO, ON',
+    bullets: [
+      'Designed high-quality bear figurines by modelling with Fusion 360 CAD software to satisfy company needs',
+      'Manufactured product safely by creating an air ventilation system to prevent potentially harmful emissions',
+      'Optimized organic shapes for printing by testing printer settings with approximately 15 prototypes',
+    ],
+  },
 ];
 ---
 <Base title="Resume — Benjamin Tran-Pugh">
@@ -32,10 +65,33 @@ const skills = [
       <div class="row">
         <div>
           <h3>University of Waterloo</h3>
-          <p class="sub">Candidate for BASc, Mechanical Engineering · 2nd year</p>
+          <p class="sub">Candidate for BASc, Mechanical Engineering</p>
+          <p class="sub stat">GPA 3.9 · 88% AVG</p>
         </div>
-        <span class="when mono-label">WATERLOO, ON</span>
+        <div class="right mono-label">
+          <span>SEP 2025 – JUN 2030</span>
+          <span>WATERLOO, ON</span>
+        </div>
       </div>
+    </section>
+
+    <section class="block">
+      <h2 class="mono-label"><b>##</b> EXPERIENCE</h2>
+      {experience.map((e) => (
+        <article class="row job">
+          <div>
+            <h3>{e.role}</h3>
+            <p class="sub">{e.org}</p>
+            <ul>
+              {e.bullets.map((b) => <li>{b}</li>)}
+            </ul>
+          </div>
+          <div class="right mono-label">
+            <span>{e.when}</span>
+            <span>{e.where}</span>
+          </div>
+        </article>
+      ))}
     </section>
 
     <section class="block">
@@ -48,15 +104,6 @@ const skills = [
           </div>
         ))}
       </dl>
-    </section>
-
-    <section class="block">
-      <h2 class="mono-label"><b>##</b> EXPERIENCE</h2>
-      <!-- PLACEHOLDER: replace with real experience bullets.
-           Copy the .row structure from EDUCATION above, one .row per role. -->
-      <div class="ph" style="aspect-ratio: auto; padding: 1.4rem;">
-        <span>EXPERIENCE PENDING — see EDITING.md § "Update the resume page"</span>
-      </div>
     </section>
   </main>
 </Base>
@@ -75,15 +122,25 @@ const skills = [
   h1 { font-size: clamp(2.6rem, 8vw, 5.5rem); }
   .dot { color: var(--accent); }
   .pending { color: var(--muted); }
-  .block { padding-top: 1.8rem; max-width: 46rem; }
+  .block { padding-top: 1.8rem; max-width: 50rem; }
   .block h2 { color: var(--accent); margin-bottom: 1rem; }
   .block h2 b { font-weight: 500; }
-  .row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+  .row { display: flex; justify-content: space-between; gap: 1.5rem; }
+  .job { border-top: 1px solid var(--line); padding-top: 1.1rem; margin-top: 1.1rem; }
+  .job:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
   h3 { font-size: 1.15rem; font-weight: 700; }
   .sub { color: var(--muted); font-size: 0.92rem; margin: 0.3rem 0 0; }
-  .when { color: var(--muted); }
+  .stat { color: var(--ink); font-weight: 500; }
+  .right { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end; color: var(--muted); white-space: nowrap; }
+  ul { color: var(--muted); padding-left: 1.1rem; margin: 0.7rem 0 0; }
+  li { margin: 0.3rem 0; font-size: 0.92rem; line-height: 1.55; }
+  li::marker { color: var(--accent); }
   .skills { margin: 0; display: grid; gap: 0.9rem; }
   .skill { border-left: 2px solid var(--accent); padding-left: 0.9rem; }
   .skill dt { color: var(--ink); }
   .skill dd { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.92rem; }
+  @media (max-width: 560px) {
+    .row { flex-direction: column; gap: 0.4rem; }
+    .right { flex-direction: row; gap: 1rem; align-items: baseline; }
+  }
 </style>
