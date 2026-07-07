@@ -1,0 +1,42 @@
+---
+---
+<header class="nav-bar">
+  <div class="wrap inner">
+    <a class="brand mono-label" href="/">BENJAMIN TRAN-PUGH</a>
+    <nav class="links" aria-label="Site">
+      <a class="mono-label" href="/#work">PROJECTS</a>
+      <a class="mono-label" href="/resume/">RESUME</a>
+      <a class="mono-label" href="#contact">CONTACT</a>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .nav-bar {
+    border-bottom: 1px solid var(--line);
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(4px);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.95rem;
+    padding-bottom: 0.95rem;
+  }
+  .brand { color: var(--accent); text-decoration: none; }
+  .links { display: flex; gap: 1.5rem; }
+  .links a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .links a:hover { color: var(--accent); }
+  @media (max-width: 480px) {
+    .links { gap: 1rem; }
+  }
+</style>

@@ -1,0 +1,80 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import Pendulum from '../components/Pendulum.astro';
+
+const projects = (await getCollection('projects')).sort(
+  (a, b) => a.data.order - b.data.order
+);
+---
+<Base title="Benjamin Tran-Pugh — Mechanical Engineering, University of Waterloo">
+  <main>
+    <section class="hero wrap">
+      <div class="intro">
+        <p class="kicker mono-label">MECHANICAL ENGINEERING — UNIVERSITY OF WATERLOO</p>
+        <h1 class="display name">Benjamin<br />Tran&#8209;Pugh<span class="dot">.</span></h1>
+        <p class="readout mono-label">
+          FOCUS&nbsp;&nbsp;: ROBOTICS / AEROSPACE / AUTOMOTIVE<br />
+          TOOLS&nbsp;&nbsp;: SOLIDWORKS · PYTHON · C++ · MATLAB · ESP32<br />
+          STATUS : OPEN TO CO-OP OPPORTUNITIES
+        </p>
+        <div class="cta">
+          <a class="btn solid" href="/resume/">RESUME ↓</a>
+          <a class="btn" href="https://github.com/BenjaminTP">GITHUB ↗</a>
+          <a class="btn" href="https://linkedin.com/in/benjamin-tran-pugh">LINKEDIN ↗</a>
+        </div>
+      </div>
+      <Pendulum />
+    </section>
+
+    <section id="work" class="wrap">
+      <div class="workhead">
+        <h2 class="mono-label"><b>##</b> SELECTED WORK</h2>
+        <span class="mono-label count">{String(projects.length).padStart(2, '0')} PROJECTS</span>
+      </div>
+      <div class="grid">
+        {projects.map((p) => <ProjectCard project={p} />)}
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    align-items: center;
+    padding-top: clamp(1.6rem, 4vw, 3.2rem);
+    padding-bottom: clamp(1.6rem, 4vw, 3.2rem);
+  }
+  .kicker { color: var(--accent); margin: 0 0 1rem; }
+  .name { font-size: clamp(3.2rem, 9.5vw, 7.5rem); }
+  .dot { color: var(--accent); }
+  .readout { color: var(--muted); line-height: 2; margin: 1.3rem 0 1.5rem; }
+  .cta { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+
+  .workhead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-top: 1px solid var(--line);
+    padding-top: 0.8rem;
+    margin-bottom: 1.2rem;
+  }
+  .workhead h2 b { color: var(--accent); font-weight: 500; }
+  .count { color: var(--muted); }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  @media (max-width: 900px) {
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 640px) {
+    .hero { grid-template-columns: 1fr; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>

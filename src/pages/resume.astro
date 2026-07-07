@@ -1,0 +1,89 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+import Base from '../layouts/Base.astro';
+
+// Drop resume.pdf into public/ and the download button activates.
+const pdfExists = fs.existsSync(path.join(process.cwd(), 'public', 'resume.pdf'));
+
+const skills = [
+  { area: 'CAD', items: 'SolidWorks · Onshape · Fusion 360 · Autodesk Inventor' },
+  { area: 'ANALYSIS & SIMULATION', items: 'FEA · Lagrangian mechanics · numerical ODE solving · MATLAB' },
+  { area: 'PROGRAMMING', items: 'Python · C++ · C · MATLAB · LaTeX' },
+  { area: 'EMBEDDED & ELECTRONICS', items: 'ESP32 · Arduino · servo + stepper motors · PCA9685 · motor drivers' },
+  { area: 'FABRICATION', items: '3D printing (Bambu Lab) · woodworking · PVC + epoxy work · hand tools' },
+];
+---
+<Base title="Resume — Benjamin Tran-Pugh">
+  <main class="wrap">
+    <header class="head">
+      <h1 class="display">Resume<span class="dot">.</span></h1>
+      {
+        pdfExists ? (
+          <a class="btn solid" href="/resume.pdf" download>DOWNLOAD PDF ↓</a>
+        ) : (
+          <span class="pending mono-label">PDF PENDING — drop resume.pdf into public/</span>
+        )
+      }
+    </header>
+
+    <section class="block">
+      <h2 class="mono-label"><b>##</b> EDUCATION</h2>
+      <div class="row">
+        <div>
+          <h3>University of Waterloo</h3>
+          <p class="sub">Candidate for BASc, Mechanical Engineering · 2nd year</p>
+        </div>
+        <span class="when mono-label">WATERLOO, ON</span>
+      </div>
+    </section>
+
+    <section class="block">
+      <h2 class="mono-label"><b>##</b> SKILLS</h2>
+      <dl class="skills">
+        {skills.map((s) => (
+          <div class="skill">
+            <dt class="mono-label">{s.area}</dt>
+            <dd>{s.items}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <section class="block">
+      <h2 class="mono-label"><b>##</b> EXPERIENCE</h2>
+      <!-- PLACEHOLDER: replace with real experience bullets.
+           Copy the .row structure from EDUCATION above, one .row per role. -->
+      <div class="ph" style="aspect-ratio: auto; padding: 1.4rem;">
+        <span>EXPERIENCE PENDING — see EDITING.md § "Update the resume page"</span>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<style>
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding-top: 1.8rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1.4rem;
+  }
+  h1 { font-size: clamp(2.6rem, 8vw, 5.5rem); }
+  .dot { color: var(--accent); }
+  .pending { color: var(--muted); }
+  .block { padding-top: 1.8rem; max-width: 46rem; }
+  .block h2 { color: var(--accent); margin-bottom: 1rem; }
+  .block h2 b { font-weight: 500; }
+  .row { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; }
+  h3 { font-size: 1.15rem; font-weight: 700; }
+  .sub { color: var(--muted); font-size: 0.92rem; margin: 0.3rem 0 0; }
+  .when { color: var(--muted); }
+  .skills { margin: 0; display: grid; gap: 0.9rem; }
+  .skill { border-left: 2px solid var(--accent); padding-left: 0.9rem; }
+  .skill dt { color: var(--ink); }
+  .skill dd { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.92rem; }
+</style>

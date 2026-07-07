@@ -1,0 +1,61 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Figure from '../../components/Figure.astro';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((p) => ({ params: { slug: p.id }, props: { project: p } }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+const { title, telemetry, tags, github, summary } = project.data;
+
+const all = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const i = all.findIndex((p) => p.id === project.id);
+const prev = all[i - 1];
+const next = all[i + 1];
+---
+<Base title={`${title} — Benjamin Tran-Pugh`} description={summary}>
+  <main class="wrap">
+    <header class="head">
+      <a class="back mono-label" href="/#work">← ALL PROJECTS</a>
+      <h1 class="display">{title}</h1>
+      <p class="tele mono-label">{telemetry}</p>
+      <p class="meta mono-label">
+        {tags.join(' · ')}
+        {github && <a class="gh" href={github}>SOURCE ON GITHUB ↗</a>}
+      </p>
+    </header>
+
+    <article class="prose">
+      <Content components={{ Figure }} />
+    </article>
+
+    <nav class="pn" aria-label="Project navigation">
+      {prev ? <a class="btn" href={`/projects/${prev.id}/`}>← {prev.data.title.toUpperCase()}</a> : <span></span>}
+      {next ? <a class="btn" href={`/projects/${next.id}/`}>{next.data.title.toUpperCase()} →</a> : <span></span>}
+    </nav>
+  </main>
+</Base>
+
+<style>
+  .head { padding-top: 1.8rem; border-bottom: 1px solid var(--line); padding-bottom: 1.4rem; }
+  .back { color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--accent); }
+  h1 { font-size: clamp(2.4rem, 7vw, 4.8rem); margin: 0.8rem 0 0.9rem; }
+  .tele { color: var(--accent); margin: 0 0 0.5rem; }
+  .meta { color: var(--muted); margin: 0; }
+  .gh { color: var(--ink); margin-left: 1rem; text-decoration-color: var(--accent); }
+  .gh:hover { color: var(--accent); }
+  .prose { padding-top: 0.6rem; }
+  .pn {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    border-top: 1px solid var(--line);
+    margin-top: 2.5rem;
+    padding-top: 1.2rem;
+  }
+</style>

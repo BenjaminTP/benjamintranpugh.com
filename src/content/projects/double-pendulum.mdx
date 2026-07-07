@@ -1,0 +1,34 @@
+---
+title: Double Pendulum
+order: 2
+featured: true
+summary: Deriving the equations of motion from the Euler–Lagrange equation and simulating chaos in Python.
+telemetry: "EOM:LAGRANGE · SOLVER:NUMERIC · REGIME:CHAOTIC"
+tags: [Python, Lagrangian Mechanics, ODEs, LaTeX, Linear Algebra]
+cover: double-pendulum/flip-fractal.png
+github: https://github.com/BenjaminTP/double-pendulum
+---
+
+## Overview
+
+The double pendulum is one of the simplest systems that produces chaos. I derived its equations of motion from the Euler–Lagrange equation and solved the resulting non-linear ODEs numerically in Python to explore how chaotic it really is.
+
+## Time-to-flip fractal
+
+This plot maps every starting position of both pendulums against how long it takes the second pendulum to flip over. The result is a fractal — a signature of chaos. The black region marks starting positions without enough energy for the second pendulum to ever flip.
+
+<Figure src="double-pendulum/flip-fractal.png" caption="TIME-TO-FLIP ACROSS INITIAL CONDITIONS — FRACTAL STRUCTURE" />
+
+## Sensitivity to initial conditions
+
+I ran 200 simulations with initial angles varying by one **billionth of a radian**. The trajectories stay synchronized for roughly 40–45 seconds — then diverge completely. By 60 seconds the system is fully chaotic.
+
+<Figure src="double-pendulum/variations.png" caption="200 RUNS, Δθ₀ = 1e-9 RAD — DIVERGENCE OVER TIME" />
+
+## Method
+
+- Derived the equations of motion with Lagrangian mechanics (full derivation typeset in LaTeX)
+- Solved the coupled non-linear ODEs numerically in Python
+- Swept initial conditions to map flip times and divergence behavior
+
+The live trace on this site's homepage is this same system — an RK4 integration running in your browser.
