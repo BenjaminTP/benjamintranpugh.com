@@ -1,0 +1,77 @@
+---
+/**
+ * Auto-gallery: renders every image/video found in public/images/<slug>/
+ * that isn't already placed inline on the page via <Figure>.
+ * Drop a file into the folder → it appears here on the next build.
+ * No code edit needed. Labels come from the filename.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+
+interface Props {
+  slug: string;
+  exclude?: string[];
+}
+const { slug, exclude = [] } = Astro.props;
+
+const IMG = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'];
+const VID = ['.mp4', '.webm', '.mov'];
+const ext = (f: string) => path.extname(f).toLowerCase();
+const isVideo = (f: string) => VID.includes(ext(f));
+
+const dir = path.join(process.cwd(), 'public', 'images', slug);
+const skip = new Set(exclude.map((f) => f.toLowerCase()));
+const files = fs.existsSync(dir)
+  ? fs
+      .readdirSync(dir)
+      .filter(
+        (f) =>
+          (IMG.includes(ext(f)) || VID.includes(ext(f))) &&
+          !skip.has(`${slug}/${f}`.toLowerCase())
+      )
+      .sort((a, b) => Number(isVideo(a)) - Number(isVideo(b)) || a.localeCompare(b))
+  : [];
+
+const label = (f: string) =>
+  path.basename(f, path.extname(f)).replace(/[-_]+/g, ' ').toUpperCase();
+---
+{
+  files.length > 0 && (
+    <section class="gallery">
+      <h2 class="mono-label"><b>##</b> MEDIA</h2>
+      <div class="grid">
+        {files.map((f) => (
+          <figure>
+            {isVideo(f) ? (
+              <video src={`/images/${slug}/${f}`} controls muted playsinline preload="metadata" />
+            ) : (
+              <a href={`/images/${slug}/${f}`}>
+                <img src={`/images/${slug}/${f}`} alt={label(f)} loading="lazy" />
+              </a>
+            )}
+            <figcaption class="mono-label">{label(f)}</figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+<style>
+  .gallery {
+    border-top: 1px solid var(--line);
+    margin-top: 2.5rem;
+    padding-top: 1.2rem;
+  }
+  h2 { color: var(--accent); margin-bottom: 1.1rem; }
+  h2 b { font-weight: 500; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+    gap: 1rem;
+  }
+  figure { margin: 0; background: var(--panel); border: 1px solid var(--line); padding: 0.6rem; }
+  img, video { width: 100%; display: block; border: 1px solid var(--line); background: #000; }
+  a { display: block; }
+  figcaption { color: var(--muted); font-size: 0.58rem; padding-top: 0.55rem; }
+</style>

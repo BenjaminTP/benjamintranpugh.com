@@ -36,20 +36,27 @@ All card content is frontmatter in that project's `.mdx` file:
 | `cover:` | card image (path under `public/images/`) |
 | `featured:` | true/false |
 
-## Add an image to a project
+## Add an image or video to a project
 
-1. Drop the file into `public/images/<project-name>/` (jpg/png, reasonable size — under ~500 KB ideally).
-2. Add one line in the `.mdx` where you want it:
-   ```
-   <Figure src="<project-name>/photo.jpg" caption="CAPTION" />
-   ```
-   If the file matches a `<Figure>` that currently shows a hatched placeholder, step 2 is already done — just drop the file in with the right name.
+**Just drop the file into `public/images/<project-name>/` — that's it.**
+Everything in that folder automatically appears in the MEDIA grid at the bottom
+of the project page (label comes from the filename, so name files like
+`exploded-view.png`). Supported: jpg/png/webp/gif + mp4/webm.
+
+To place a file **inline in the text** instead, add one line in the `.mdx`:
+```
+<Figure src="<project-name>/photo.jpg" align="right" caption="CAPTION" />
+```
+Files placed inline are automatically left out of the bottom grid.
+
+Videos: keep them small (compress to ~1280px H.264 mp4). GitHub rejects files
+over 100 MB. Ask Claude to compress if unsure — ffmpeg is installed.
 
 ## Add a whole new project
 
 1. Copy `src/content/projects/_template.mdx` → `src/content/projects/my-project.mdx` (filename = URL).
 2. Fill in the frontmatter and body (instructions are inside the template).
-3. Drop images into `public/images/my-project/`.
+3. Drop images/videos into `public/images/my-project/` — they show up in the MEDIA grid automatically.
 4. Commit & push.
 
 ## Update the resume

@@ -5,7 +5,7 @@ featured: true
 summary: A 4-DOF robot arm with full inverse kinematics, browser-based control, and positional memory.
 telemetry: "DOF:4 · IK:FULL · MCU:ESP32"
 tags: [SolidWorks, FEA, C++, Python, MATLAB, ESP32]
-cover: robot-arm-2/hero.jpg
+cover: robot-arm-2/live.png
 github: https://github.com/BenjaminTP/ROBOT_ARM
 ---
 
@@ -13,22 +13,24 @@ github: https://github.com/BenjaminTP/ROBOT_ARM
 
 The goal: a functioning 4-DOF robot arm with full inverse kinematics, smooth motion, easy controls, and working positional memory — a major step up from my earlier 2-DOF build.
 
-<Figure src="robot-arm-2/hero.jpg" caption="THE FINISHED 4-DOF ARM" />
-
 ## Design
 
-I started by researching the math behind inverse kinematics and robotic motion, then modeled the full arm in SolidWorks around accurate models of off-the-shelf components. Before ordering anything, I ran FEA on the structure to confirm it could handle the loads.
+I started by researching the math behind inverse kinematics and robotic motion, then modeled the full arm in SolidWorks around accurate models of off-the-shelf components.
 
 <Figure src="robot-arm-2/cad.jpg" align="right" caption="SOLIDWORKS ASSEMBLY" />
 
+Before ordering anything, I ran FEA on the structure to confirm it could handle the loads.
+
 I prototyped the inverse kinematics solution in Python and MATLAB first, where iterating is fast, then ported it to C++ for deployment.
+
+<Figure src="robot-arm-2/fea.png" caption="FEA — STRUCTURAL VALIDATION BEFORE BUYING PARTS" />
 
 ## Build
 
 The final system runs on an ESP32 driving servo motors through a PCA9685 driver board. Using the ESP32's Wi-Fi, I built a browser-based UI for remote control — the arm can store predetermined positions and replay them, with manual override at any time.
 
-<Figure src="robot-arm-2/assembly.jpg" caption="WIRING AND ASSEMBLY" />
+<Figure src="robot-arm-2/controls.png" caption="BROWSER-BASED CONTROL UI, SERVED FROM THE ESP32" />
 
 ## Result
 
-A working arm with full inverse kinematics, smooth controlled motion, and positional memory, controllable from any device on the network.
+A working arm with full inverse kinematics, smooth controlled motion, and positional memory, controllable from any device on the network. The demo video below shows it running.

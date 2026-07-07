@@ -5,7 +5,7 @@ featured: true
 summary: Deriving the equations of motion from the Euler–Lagrange equation and simulating chaos in Python.
 telemetry: "EOM:LAGRANGE · SOLVER:NUMERIC · REGIME:CHAOTIC"
 tags: [Python, Lagrangian Mechanics, ODEs, LaTeX, Linear Algebra]
-cover: double-pendulum/flip-fractal.png
+cover: double-pendulum/fractal.png
 github: https://github.com/BenjaminTP/double-pendulum
 ---
 
@@ -17,15 +17,17 @@ The double pendulum is one of the simplest systems that produces chaos. I derive
 
 This plot maps every starting position of both pendulums against how long it takes the second pendulum to flip over. The result is a fractal — a signature of chaos. The black region marks starting positions without enough energy for the second pendulum to ever flip.
 
-<Figure src="double-pendulum/flip-fractal.png" caption="TIME-TO-FLIP ACROSS INITIAL CONDITIONS — FRACTAL STRUCTURE" />
+<Figure src="double-pendulum/fractal.png" caption="TIME-TO-FLIP ACROSS INITIAL CONDITIONS — FRACTAL STRUCTURE" />
 
 ## Sensitivity to initial conditions
 
 I ran 200 simulations with initial angles varying by one **billionth of a radian**. The trajectories stay synchronized for roughly 40–45 seconds — then diverge completely. By 60 seconds the system is fully chaotic.
 
-<Figure src="double-pendulum/variations.png" caption="200 RUNS, Δθ₀ = 1e-9 RAD — DIVERGENCE OVER TIME" />
+<Figure src="double-pendulum/variations-plot.png" caption="200 RUNS, Δθ₀ = 1e-9 RAD — DIVERGENCE OVER TIME" />
 
 ## Method
+
+<Figure src="double-pendulum/derivation.png" align="right" caption="EULER–LAGRANGE DERIVATION, TYPESET IN LATEX" />
 
 - Derived the equations of motion with Lagrangian mechanics (full derivation typeset in LaTeX)
 - Solved the coupled non-linear ODEs numerically in Python

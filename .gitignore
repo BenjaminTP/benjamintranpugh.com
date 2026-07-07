@@ -3,3 +3,4 @@ dist/
 .astro/
 graphify-out/
 .DS_Store
+media-originals/

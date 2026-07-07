@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Figure from '../../components/Figure.astro';
+import Gallery from '../../components/Gallery.astro';
 
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
@@ -11,6 +12,9 @@ export async function getStaticPaths() {
 const { project } = Astro.props;
 const { Content } = await render(project);
 const { title, telemetry, tags, github, summary } = project.data;
+
+// files already placed inline via <Figure> — the gallery skips them
+const inlineMedia = [...(project.body ?? '').matchAll(/src="([^"]+)"/g)].map((m) => m[1]);
 
 const all = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const i = all.findIndex((p) => p.id === project.id);
@@ -32,6 +36,8 @@ const next = all[i + 1];
     <article class="prose">
       <Content components={{ Figure }} />
     </article>
+
+    <Gallery slug={project.id} exclude={inlineMedia} />
 
     <nav class="pn" aria-label="Project navigation">
       {prev ? <a class="btn" href={`/projects/${prev.id}/`}>← {prev.data.title.toUpperCase()}</a> : <span></span>}
