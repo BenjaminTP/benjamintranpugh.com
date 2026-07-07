@@ -42,4 +42,4 @@ Project frontmatter fields (`title, order, featured, summary, telemetry, tags, c
 
 ## Codebase questions
 
-A Graphify knowledge graph of this repo can be generated with `graphify .` (outputs `graphify-out/GRAPH_REPORT.md` + queryable `graph.json`, gitignored). For "where is X / how does Y connect" questions, prefer querying an existing graph over scanning the repo; regenerate it after structural changes, not content edits.
+A Graphify knowledge graph of this repo lives in `graphify-out/` (gitignored): `GRAPH_REPORT.md` + queryable `graph.json`. For "where is X / how does Y connect" questions, prefer `graphify explain "X"` / `graphify path "A" "B"` or the report over scanning the repo. Regenerate after structural changes (not content edits) with `graphify update .` — the code-only mode, no API key needed (plain `graphify .` requires an LLM key for docs/images).
