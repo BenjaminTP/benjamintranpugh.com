@@ -68,6 +68,7 @@ const label = (f: string) =>
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
     gap: 1rem;
+    align-items: start; /* panels hug their media instead of stretching to the tallest row item */
   }
   figure { margin: 0; background: var(--panel); border: 1px solid var(--line); padding: 0.6rem; }
   img, video { width: 100%; display: block; border: 1px solid var(--line); background: #000; }
