@@ -2,7 +2,6 @@
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import ProjectCard from '../components/ProjectCard.astro';
-import Pendulum from '../components/Pendulum.astro';
 
 const projects = (await getCollection('projects')).sort(
   (a, b) => a.data.order - b.data.order
@@ -25,12 +24,15 @@ const projects = (await getCollection('projects')).sort(
           <a class="btn" href="https://linkedin.com/in/benjamin-tran-pugh">LINKEDIN ↗</a>
         </div>
       </div>
-      <Pendulum />
+      <a class="feature" href="/projects/robot-arm-2/">
+        <img src="/images/robot-arm-2/exploded.png" alt="Robot Arm 2.0 — exploded assembly view in SolidWorks" />
+        <span class="mono-label">ROBOT ARM 2.0 — EXPLODED ASSEMBLY · SOLIDWORKS</span>
+      </a>
     </section>
 
     <section id="work" class="wrap">
       <div class="workhead">
-        <h2 class="mono-label"><b></b> SELECTED WORK</h2>
+        <h2 class="mono-label">SELECTED WORK</h2>
         <span class="mono-label count">{String(projects.length).padStart(2, '0')} PROJECTS</span>
       </div>
       <div class="grid">
@@ -63,8 +65,18 @@ const projects = (await getCollection('projects')).sort(
     padding-top: 0.8rem;
     margin-bottom: 1.2rem;
   }
-  .workhead h2 b { color: var(--accent); font-weight: 500; }
   .count { color: var(--muted); }
+  .feature {
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 0.7rem;
+    text-decoration: none;
+    transition: border-color 0.15s;
+  }
+  .feature:hover { border-color: var(--accent); }
+  .feature img { width: 100%; aspect-ratio: 16 / 11; object-fit: cover; border: 1px solid var(--line); }
+  .feature .mono-label { display: block; color: var(--muted); font-size: 0.6rem; padding-top: 0.6rem; }
   .grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

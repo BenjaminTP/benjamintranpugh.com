@@ -48,6 +48,9 @@ const next = all[i + 1];
 </Base>
 
 <style>
+  /* narrower, centered reading column (overrides .wrap's site-wide width) */
+  main { max-width: 48rem; }
+  article.prose { max-width: none; }
   .head { padding-top: 1.8rem; border-bottom: 1px solid var(--line); padding-bottom: 1.4rem; }
   .back { color: var(--muted); text-decoration: none; }
   .back:hover { color: var(--accent); }

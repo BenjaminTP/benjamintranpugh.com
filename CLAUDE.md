@@ -14,7 +14,7 @@ Personal portfolio of Benjamin Tran-Pugh — mechanical engineering student, Uni
 - Ground `#131519` charcoal with a faint 44px grid; panels `#1a1d23`; borders `#2a2e36`; text `#e9e8e3` / muted `#9a9da4`.
 - **Amber `#f2a33c` is the only accent.** Used sparingly: telemetry lines, hover borders, one highlight per view.
 - Type roles: **Anton** = `.display` (big uppercase headlines only), **Archivo** = body, **IBM Plex Mono** = `.mono-label` (nav, tags, captions, telemetry). Fonts are self-hosted woff2 in `public/fonts/` — never add a font CDN.
-- Signature elements: live double-pendulum canvas (`Pendulum.astro`), mono telemetry lines on cards, hatched placeholders wherever an image file is missing (never a broken image).
+- Signature elements: mono telemetry lines on cards, a framed featured-project photo in the hero, hatched placeholders wherever an image file is missing (never a broken image). No decorative animations — everything shown must be Benjamin's real work.
 - Layout is dense and left-aligned. Hairline borders (`--line`), not shadows.
 
 ## File map — touch only what the task needs

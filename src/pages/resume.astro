@@ -61,7 +61,7 @@ const experience = [
     </header>
 
     <section class="block">
-      <h2 class="mono-label"><b>##</b> EDUCATION</h2>
+      <h2 class="mono-label">EDUCATION</h2>
       <div class="row">
         <div>
           <h3>University of Waterloo</h3>
@@ -76,7 +76,7 @@ const experience = [
     </section>
 
     <section class="block">
-      <h2 class="mono-label"><b>##</b> EXPERIENCE</h2>
+      <h2 class="mono-label">EXPERIENCE</h2>
       {experience.map((e) => (
         <article class="row job">
           <div>
@@ -95,7 +95,7 @@ const experience = [
     </section>
 
     <section class="block">
-      <h2 class="mono-label"><b>##</b> SKILLS</h2>
+      <h2 class="mono-label">SKILLS</h2>
       <dl class="skills">
         {skills.map((s) => (
           <div class="skill">
@@ -109,6 +109,8 @@ const experience = [
 </Base>
 
 <style>
+  /* narrower, centered reading column (overrides .wrap's site-wide width) */
+  main { max-width: 48rem; }
   .head {
     display: flex;
     justify-content: space-between;
@@ -124,7 +126,6 @@ const experience = [
   .pending { color: var(--muted); }
   .block { padding-top: 1.8rem; max-width: 50rem; }
   .block h2 { color: var(--accent); margin-bottom: 1rem; }
-  .block h2 b { font-weight: 500; }
   .row { display: flex; justify-content: space-between; gap: 1.5rem; }
   .job { border-top: 1px solid var(--line); padding-top: 1.1rem; margin-top: 1.1rem; }
   .job:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
