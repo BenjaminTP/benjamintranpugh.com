@@ -8,41 +8,44 @@ const pdfExists = fs.existsSync(path.join(process.cwd(), 'public', 'resume.pdf')
 
 const skills = [
   {
-    area: 'CAD SOFTWARE',
-    items: 'SolidWorks (PDM, FEA, Sheet Metal) · AutoCAD · Onshape · Autodesk Inventor · Fusion 360',
+    area: 'CAD & Analysis',
+    items: 'SolidWorks (FEA, PDM, Sheet Metal), Onshape (FEA), Fusion 360, Autodesk Inventor, AutoCAD, GD&T',
   },
   {
-    area: 'LANGUAGES',
-    items: 'Python (NumPy, Matplotlib) · C++ (Arduino, ESP32) · MATLAB · C',
+    area: 'SOFTWARE',
+    items: 'Python (NumPy, SciPy, Matplotlib), C/C++ (ESP32), MATLAB, Linux (Raspberry Pi, Jetson Orin Nano), Git',
   },
   {
     area: 'OTHER',
-    items: 'CAE · 3D printing · GD&T · electrical circuits · machining · technical drawings · Excel / Word',
+    items: '3D Printing (PLA, PETG, TPU, ABS, PA6-CF), DFM/DFA, Machining, Technical Drawings, Microsoft Suite, URDF',
   },
 ];
 
 const experience = [
   {
+    role: 'Mechanical Engineering Intern',
+    org: 'Human Computer Lab',
+    when: 'FEB 2026 – AUG 2026',
+    where: 'TORONTO, ON',
+    bullets: [
+      'Owned mechanical and actuation development of LeLamp, an animatronic robotics product, across three actuator generations, advancing it from functional prototype toward manufacturing readiness through EVT/DVT stages',
+      'Designed and hardware-validated a spring-based gravity-compensation system to eliminate actuator thermal overload, deriving joint balance conditions from Lagrangian mechanics and verifying against published literature',
+      'Designed antagonistic-pair, capstan-drive, and full/partial gravity-compensation mechanisms, validating each by calculation, physics simulation, and iterative testing of hardware against predictions',
+      'Led actuator trade studies with Pugh matrices and kill criteria; recommendations adopted into the product roadmap',
+      ' Identified reliability gaps in fatigue and lifecycle coverage and drove their integration into the validation roadmap from program start, de-risking late-stage failures, safety issues, and redesign',
+      'Diagnosed root causes of motor noise from first principles and damped the dominant resonances in adjacent walls',
+    ],
+  },
+  {
     role: 'Mechanical Team Member',
     org: 'Waterloo Aerial Robotics Group (WARG)',
-    when: 'SEP 2025 – PRESENT',
+    when: 'SEP 2025 – APR 2026',
     where: 'WATERLOO, ON',
     bullets: [
       'Modelled and fabricated solutions to payload tasks on the WARG Valkyrie AEAC 2026 competition drone',
       'Aided in the design, fabrication, and analysis of WARG Helios to create a working fixed-wing RC plane',
       'Collaborated with mechanical, autonomy, electrical, and software teams consisting of hundreds of members',
       'Utilized and significantly improved technical skills such as SolidWorks, FEA, and PDM',
-    ],
-  },
-  {
-    role: 'Product Development Engineer',
-    org: 'JA Canada (BEARAS JA)',
-    when: 'JAN 2025 – APR 2025',
-    where: 'TORONTO, ON',
-    bullets: [
-      'Designed high-quality bear figurines by modelling with Fusion 360 CAD software to satisfy company needs',
-      'Manufactured product safely by creating an air ventilation system to prevent potentially harmful emissions',
-      'Optimized organic shapes for printing by testing printer settings with approximately 15 prototypes',
     ],
   },
 ];
@@ -66,7 +69,7 @@ const experience = [
         <div>
           <h3>University of Waterloo</h3>
           <p class="sub">Candidate for BASc, Mechanical Engineering</p>
-          <p class="sub stat">GPA 3.9 · 88% AVG</p>
+          <p class="sub stat">GPA 3.83 · 86.36% AVG</p>
         </div>
         <div class="right mono-label">
           <span>SEP 2025 – JUN 2030</span>
