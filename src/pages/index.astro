@@ -6,8 +6,24 @@ import ProjectCard from '../components/ProjectCard.astro';
 const projects = (await getCollection('projects')).sort(
   (a, b) => a.data.order - b.data.order
 );
+
+// structured data so search engines connect the site to Benjamin by name
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'Benjamin Tran-Pugh',
+  url: 'https://benjamintranpugh.com',
+  jobTitle: 'Mechanical Engineering Student',
+  affiliation: { '@type': 'CollegeOrUniversity', name: 'University of Waterloo' },
+  email: 'mailto:benjamintranpugh@gmail.com',
+  sameAs: [
+    'https://github.com/BenjaminTP',
+    'https://linkedin.com/in/benjamin-tran-pugh',
+  ],
+};
 ---
 <Base title="Benjamin Tran-Pugh — Mechanical Engineering, University of Waterloo">
+  <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
   <main>
     <section class="hero wrap">
       <div class="intro">
@@ -15,8 +31,10 @@ const projects = (await getCollection('projects')).sort(
         <h1 class="display name">Benjamin<br />Tran&#8209;Pugh</h1>
         <p class="readout mono-label">
           FOCUS&nbsp;&nbsp;: ROBOTICS / AEROSPACE / AUTOMOTIVE<br />
-          TOOLS&nbsp;&nbsp;: SOLIDWORKS · PYTHON · C++ · MATLAB · ESP32<br />
-          STATUS : OPEN TO CO-OP OPPORTUNITIES
+          CAD&nbsp;&nbsp;&nbsp;&nbsp;: SOLIDWORKS · ONSHAPE · INVENTOR · FUSION 360 · AUTOCAD<br />
+          SIM&nbsp;&nbsp;&nbsp;&nbsp;: FEA (SOLIDWORKS, ANSYS) · CAE · PYTHON / MATLAB MODELS<br />
+          CODE&nbsp;&nbsp;&nbsp;: PYTHON · C/C++ · MATLAB · ESP32 / ARDUINO<br />
+          STATUS : MECHANICAL ENGINEERING INTERN AT HUMAN COMPUTER LAB
         </p>
         <div class="cta">
           <a class="btn solid" href="/resume/">RESUME</a>
@@ -25,8 +43,8 @@ const projects = (await getCollection('projects')).sort(
         </div>
       </div>
       <a class="feature" href="/projects/robot-arm-2/">
-        <img src="/images/robot-arm-2/orbit.gif" alt="Robot Arm 2.0 — exploded assembly view in SolidWorks" />
-        <span class="mono-label">ROBOT ARM 2.0 — EXPLODED ASSEMBLY · SOLIDWORKS</span>
+        <video src="/images/robot-arm-2/orbit.mp4" autoplay loop muted playsinline aria-label="Robot Arm 2.0 — CAD orbit animation in SolidWorks"></video>
+        <span class="mono-label">ROBOT ARM 2.0 — CAD ORBIT · SOLIDWORKS</span>
       </a>
     </section>
 
@@ -74,7 +92,7 @@ const projects = (await getCollection('projects')).sort(
     transition: border-color 0.15s;
   }
   .feature:hover { border-color: var(--accent); }
-  .feature img { width: 100%; aspect-ratio: 16 / 11; object-fit: cover; border: 1px solid var(--line); }
+  .feature img, .feature video { width: 100%; aspect-ratio: 16 / 11; object-fit: cover; border: 1px solid var(--line); display: block; }
   .feature .mono-label { display: block; color: var(--muted); font-size: 0.6rem; padding-top: 0.6rem; }
   .grid {
     display: grid;
