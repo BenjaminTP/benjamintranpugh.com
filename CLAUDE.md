@@ -24,7 +24,7 @@ Personal portfolio of Benjamin Tran-Pugh — mechanical engineering student, Uni
 | Edit project text/images/order/tags | `src/content/projects/<slug>.mdx` only |
 | Add a project | copy `src/content/projects/_template.mdx` |
 | Add/replace media | drop into `public/images/<slug>/` — the auto-gallery (`Gallery.astro`) shows everything there; `<Figure>`-inlined files are auto-excluded. Videos must be web-sized H.264 mp4 (<100 MB; compress with ffmpeg) |
-| Resume content | `src/pages/resume.astro`; PDF = `public/resume.pdf` |
+| Resume | replace `public/resume.pdf` only. The page shows an auto-rendered image preview of the PDF (built by `scripts/render-resume.mjs` via an integration in `astro.config.mjs`); `resume-page-*.png` are generated + gitignored. Do not hand-type resume content. |
 | Hero text / status line | `src/pages/index.astro` |
 | Contact info | `src/components/Footer.astro` |
 | Colors/fonts/spacing | `src/styles/tokens.css` (values) or `src/styles/global.css` (shared patterns) |

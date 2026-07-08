@@ -4,3 +4,6 @@ dist/
 graphify-out/
 .DS_Store
 media-originals/
+
+# generated resume preview (built from public/resume.pdf)
+resume-page-*.png

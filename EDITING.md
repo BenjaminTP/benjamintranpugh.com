@@ -61,10 +61,11 @@ over 100 MB. Ask Claude to compress if unsure — ffmpeg is installed.
 
 ## Update the resume
 
-- **PDF:** replace `public/resume.pdf`.
-- **On-page content:** edit `src/pages/resume.astro` — education, `skills`, and
-  `experience` are plain-text lists near the top of the file. Add a job by
-  copying one `{ role, org, when, where, bullets }` block.
+Replace `public/resume.pdf` with your new file, commit, and push. That is the
+whole job. The resume page shows a live image preview of the PDF, and the
+download button serves it. The preview image is rendered from the PDF
+automatically on every build, so there is nothing to convert by hand and no
+text to keep in sync. Multi-page PDFs show every page stacked.
 
 ## Embed a YouTube video
 

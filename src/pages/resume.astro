@@ -3,117 +3,49 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Base from '../layouts/Base.astro';
 
-// Drop resume.pdf into public/ and the download button activates.
-const pdfExists = fs.existsSync(path.join(process.cwd(), 'public', 'resume.pdf'));
-
-const skills = [
-  {
-    area: 'CAD & Analysis',
-    items: 'SolidWorks (FEA, PDM, Sheet Metal), Onshape (FEA), Fusion 360, Autodesk Inventor, AutoCAD, GD&T',
-  },
-  {
-    area: 'SOFTWARE',
-    items: 'Python (NumPy, SciPy, Matplotlib), C/C++ (ESP32), MATLAB, Linux (Raspberry Pi, Jetson Orin Nano), Git',
-  },
-  {
-    area: 'OTHER',
-    items: '3D Printing (PLA, PETG, TPU, ABS, PA6-CF), DFM/DFA, Machining, Technical Drawings, Microsoft Suite, URDF',
-  },
-];
-
-const experience = [
-  {
-    role: 'Mechanical Engineering Intern',
-    org: 'Human Computer Lab',
-    when: 'FEB 2026 – AUG 2026',
-    where: 'TORONTO, ON',
-    bullets: [
-      'Owned mechanical and actuation development of LeLamp, an animatronic robotics product, across three actuator generations, advancing it from functional prototype toward manufacturing readiness through EVT/DVT stages',
-      'Designed and hardware-validated a spring-based gravity-compensation system to eliminate actuator thermal overload, deriving joint balance conditions from Lagrangian mechanics and verifying against published literature',
-      'Designed antagonistic-pair, capstan-drive, and full/partial gravity-compensation mechanisms, validating each by calculation, physics simulation, and iterative testing of hardware against predictions',
-      'Led actuator trade studies with Pugh matrices and kill criteria; recommendations adopted into the product roadmap',
-      ' Identified reliability gaps in fatigue and lifecycle coverage and drove their integration into the validation roadmap from program start, de-risking late-stage failures, safety issues, and redesign',
-      'Diagnosed root causes of motor noise from first principles and damped the dominant resonances in adjacent walls',
-    ],
-  },
-  {
-    role: 'Mechanical Team Member',
-    org: 'Waterloo Aerial Robotics Group (WARG)',
-    when: 'SEP 2025 – APR 2026',
-    where: 'WATERLOO, ON',
-    bullets: [
-      'Modelled and fabricated solutions to payload tasks on the WARG Valkyrie AEAC 2026 competition drone',
-      'Aided in the design, fabrication, and analysis of WARG Helios to create a working fixed-wing RC plane',
-      'Collaborated with mechanical, autonomy, electrical, and software teams consisting of hundreds of members',
-      'Utilized and significantly improved technical skills such as SolidWorks, FEA, and PDM',
-    ],
-  },
-];
+// The resume shows a live preview of public/resume.pdf. The page images are
+// rendered from the PDF automatically at build time (see astro.config.mjs +
+// scripts/render-resume.mjs). To update: replace public/resume.pdf and push.
+const pub = path.join(process.cwd(), 'public');
+const pdfExists = fs.existsSync(path.join(pub, 'resume.pdf'));
+const pages = fs.existsSync(pub)
+  ? fs
+      .readdirSync(pub)
+      .filter((f) => /^resume-page-\d+\.png$/.test(f))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+  : [];
 ---
 <Base title="Resume — Benjamin Tran-Pugh">
   <main class="wrap">
     <header class="head">
       <h1 class="display">Resume</h1>
       {
-        pdfExists ? (
+        pdfExists && (
           <a class="btn solid" href="/resume.pdf" download>DOWNLOAD PDF ↓</a>
-        ) : (
-          <span class="pending mono-label">PDF PENDING — drop resume.pdf into public/</span>
         )
       }
     </header>
 
-    <section class="block">
-      <h2 class="mono-label">EDUCATION</h2>
-      <div class="row">
-        <div>
-          <h3>University of Waterloo</h3>
-          <p class="sub">Candidate for BASc, Mechanical Engineering</p>
-          <p class="sub stat">GPA 3.83 · 86.36% AVG</p>
+    {
+      pages.length > 0 ? (
+        <div class="preview">
+          {pages.map((p, i) => (
+            <img
+              src={`/${p}`}
+              alt={`Benjamin Tran-Pugh resume, page ${i + 1}`}
+              loading={i === 0 ? 'eager' : 'lazy'}
+            />
+          ))}
         </div>
-        <div class="right mono-label">
-          <span>SEP 2025 – JUN 2030</span>
-          <span>WATERLOO, ON</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="block">
-      <h2 class="mono-label">EXPERIENCE</h2>
-      {experience.map((e) => (
-        <article class="row job">
-          <div>
-            <h3>{e.role}</h3>
-            <p class="sub">{e.org}</p>
-            <ul>
-              {e.bullets.map((b) => <li>{b}</li>)}
-            </ul>
-          </div>
-          <div class="right mono-label">
-            <span>{e.when}</span>
-            <span>{e.where}</span>
-          </div>
-        </article>
-      ))}
-    </section>
-
-    <section class="block">
-      <h2 class="mono-label">SKILLS</h2>
-      <dl class="skills">
-        {skills.map((s) => (
-          <div class="skill">
-            <dt class="mono-label">{s.area}</dt>
-            <dd>{s.items}</dd>
-          </div>
-        ))}
-      </dl>
-    </section>
+      ) : (
+        <p class="pending mono-label">RESUME PENDING — drop resume.pdf into public/</p>
+      )
+    }
   </main>
 </Base>
 
 <style>
-  /* narrower, centered reading column (overrides .wrap's site-wide width) */
-  main { max-width: 48rem; }
+  main { max-width: 52rem; }
   .head {
     display: flex;
     justify-content: space-between;
@@ -123,27 +55,15 @@ const experience = [
     padding-top: 1.8rem;
     border-bottom: 1px solid var(--line);
     padding-bottom: 1.4rem;
+    margin-bottom: 1.8rem;
   }
   h1 { font-size: clamp(2.6rem, 8vw, 5.5rem); }
   .pending { color: var(--muted); }
-  .block { padding-top: 1.8rem; max-width: 50rem; }
-  .block h2 { color: var(--accent); margin-bottom: 1rem; }
-  .row { display: flex; justify-content: space-between; gap: 1.5rem; }
-  .job { border-top: 1px solid var(--line); padding-top: 1.1rem; margin-top: 1.1rem; }
-  .job:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
-  h3 { font-size: 1.15rem; font-weight: 700; }
-  .sub { color: var(--muted); font-size: 0.92rem; margin: 0.3rem 0 0; }
-  .stat { color: var(--ink); font-weight: 500; }
-  .right { display: flex; flex-direction: column; gap: 0.4rem; align-items: flex-end; color: var(--muted); white-space: nowrap; }
-  ul { color: var(--muted); padding-left: 1.1rem; margin: 0.7rem 0 0; }
-  li { margin: 0.3rem 0; font-size: 0.92rem; line-height: 1.55; }
-  li::marker { color: var(--accent); }
-  .skills { margin: 0; display: grid; gap: 0.9rem; }
-  .skill { border-left: 2px solid var(--accent); padding-left: 0.9rem; }
-  .skill dt { color: var(--ink); }
-  .skill dd { margin: 0.25rem 0 0; color: var(--muted); font-size: 0.92rem; }
-  @media (max-width: 560px) {
-    .row { flex-direction: column; gap: 0.4rem; }
-    .right { flex-direction: row; gap: 1rem; align-items: baseline; }
+  .preview { display: flex; flex-direction: column; gap: 1.2rem; }
+  .preview img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    background: #fff;
   }
 </style>
