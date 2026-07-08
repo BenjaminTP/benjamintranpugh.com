@@ -43,3 +43,5 @@ Project frontmatter fields (`title, order, featured, summary, telemetry, tags, c
 ## Codebase questions
 
 A Graphify knowledge graph of this repo lives in `graphify-out/` (gitignored): `GRAPH_REPORT.md` + queryable `graph.json`. For "where is X / how does Y connect" questions, prefer `graphify explain "X"` / `graphify path "A" "B"` or the report over scanning the repo. Regenerate after structural changes (not content edits) with `graphify update .` — the code-only mode, no API key needed (plain `graphify .` requires an LLM key for docs/images).
+
+Do not use m-dashes, this is a clear sign of AI generated text.

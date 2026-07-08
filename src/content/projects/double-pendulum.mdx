@@ -3,7 +3,7 @@ title: Double Pendulum
 order: 2
 featured: true
 summary: Deriving the equations of motion from the Euler–Lagrange equation and simulating chaos in Python.
-telemetry: "EOM:LAGRANGE · SOLVER:NUMERIC · REGIME:CHAOTIC"
+telemetry: "EOM:LAGRANGE | SOLVER:NUMERIC"
 tags: [Python, Lagrangian Mechanics, ODEs, LaTeX, Linear Algebra]
 cover: double-pendulum/fractal.png
 github: https://github.com/BenjaminTP/double-pendulum
@@ -15,13 +15,15 @@ The double pendulum is one of the simplest systems that produces chaos. I derive
 
 ## Time-to-flip fractal
 
-This plot maps every starting position of both pendulums against how long it takes the second pendulum to flip over. The result is a fractal — a signature of chaos. The black region marks starting positions without enough energy for the second pendulum to ever flip.
+This plot maps every starting position of both pendulums against how long it takes the second pendulum to flip over. The result is a fractal, a signature of chaos. The black region marks starting positions without enough energy for the second pendulum to ever flip.
 
 <Figure src="double-pendulum/fractal.png" caption="TIME-TO-FLIP ACROSS INITIAL CONDITIONS — FRACTAL STRUCTURE" />
 
 ## Sensitivity to initial conditions
 
-I ran 200 simulations with initial angles varying by one **billionth of a radian**. The trajectories stay synchronized for roughly 40–45 seconds — then diverge completely. By 60 seconds the system is fully chaotic.
+I ran 200 simulations with initial angles varying by one **billionth of a radian**. The trajectories stay synchronized for roughly 40–45 seconds, then diverge completely. By 60 seconds the system is fully chaotic. 
+
+To put into perspective how small 1e-9 rad is, if you shined two lasers at the moon seperated by 1e-9 rad, the distance between them would be just over a foot.
 
 <Figure src="double-pendulum/variations-plot.png" caption="200 RUNS, Δθ₀ = 1e-9 RAD — DIVERGENCE OVER TIME" />
 
