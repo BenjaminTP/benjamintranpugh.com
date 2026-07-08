@@ -1,4 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="jet" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E0442E"/>
+      <stop offset=".3" stop-color="#E8D533"/>
+      <stop offset=".55" stop-color="#35C25A"/>
+      <stop offset=".78" stop-color="#21B0D6"/>
+      <stop offset="1" stop-color="#2451D6"/>
+    </linearGradient>
+  </defs>
   <rect width="32" height="32" fill="#131519"/>
-  <text x="16" y="24" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="21" font-weight="800" fill="#F2A33C">B</text>
+  <g transform="rotate(20 16 16)">
+    <rect x="11" y="3.5" width="10" height="25" rx="5" fill="url(#jet)"/>
+    <circle cx="16" cy="8.5" r="1.9" fill="#131519"/>
+    <circle cx="16" cy="23.5" r="1.9" fill="#131519"/>
+  </g>
 </svg>
