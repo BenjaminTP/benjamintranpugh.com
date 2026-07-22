@@ -1,8 +1,8 @@
 # benjamintranpugh.com
 
-Personal portfolio — Astro static site, deployed to GitHub Pages on every push to `main`.
+Personal portfolio: Astro static site, deployed to GitHub Pages on every push to `main`.
 
-- **Edit content without AI:** see [EDITING.md](EDITING.md) — most changes are one line.
+- **Edit content without AI:** see [EDITING.md](EDITING.md), most changes are one line.
 - **Working with Claude/Opus:** the standing brief is [CLAUDE.md](CLAUDE.md) (read automatically).
 - **Local preview:** `npm install`, then `npm run dev` → http://localhost:4321
 

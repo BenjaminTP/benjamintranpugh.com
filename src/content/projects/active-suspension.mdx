@@ -1,0 +1,182 @@
+---
+title: Active Suspension
+order: 1
+featured: true
+summary: Skyhook control on a quarter-car model, cutting RMS body acceleration by 9.6% on a worn road and 57.1% at resonance.
+telemetry: "RMS ACCEL: -9.6% TO -57.1% | ACTUATOR: 663 N PEAK"
+tags: [Python, Control Systems, Vehicle Dynamics, ODEs, ISO 8608, Jul 2026]
+cover: active-suspension/animation-class-c.mp4
+github: https://github.com/BenjaminTP/Active-Suspension-Project
+writeup: https://github.com/BenjaminTP/Active-Suspension-Project/blob/main/phase1_writeup.md
+---
+
+## Overview
+
+I built a quarter-car suspension model from scratch to answer one question: how much ride comfort can an actuator buy you over a passive spring and damper? Comfort is measured as RMS body acceleration, so that is the number I optimized and the number I report.
+
+Skyhook control cut it on every road I tested:
+
+<Stats items={[
+  { value: "-9.6%",  label: "CLASS-C ROAD / 100 KM/H" },
+  { value: "-12.3%", label: "5 CM BUMP" },
+  { value: "-37.6%", label: "8 CM BODY DROP" },
+  { value: "-57.1%", label: "RESONANCE ROAD" }
+]} note="RMS BODY ACCELERATION, PASSIVE VS SKYHOOK, IDENTICAL ROADS AND INITIAL CONDITIONS" />
+
+Everything below is Phase 1: derivation, parameter selection, control law, road generation, and a test bench. Phase 2 adds preview control and a physical model.
+
+## The model
+
+<Figure src="active-suspension/free-body-diagram.png" align="right" caption="FREE-BODY DIAGRAM / WHEEL AND QUARTER-BODY MASSES" />
+
+Most derivations I found waved away gravity, so I worked the equations of motion out from first principles instead. Writing the spring forces in absolute coordinates, then substituting each mass's static equilibrium position, makes the $mg$ terms cancel exactly. That is the reason gravity drops out, and it also fixes what the coordinates mean: every displacement below is measured from static equilibrium, not from the ground.
+
+$$
+\begin{aligned}
+m_1\ddot{x}_1 &= k_2(x_2-x_1) + b(\dot{x}_2-\dot{x}_1) - k_1(x_1-x_r)\\[2pt]
+m_2\ddot{x}_2 &= -k_2(x_2-x_1) - b(\dot{x}_2-\dot{x}_1)
+\end{aligned}
+$$
+
+## Picking the parameters
+
+I sized a quarter of a 1500 kg car, then worked backwards from the ride frequency *Fundamentals of Vehicle Dynamics* (Gillespie) gives as comfortable, 1.0 to 1.5 Hz. Choosing 1.2 Hz and a 225 kN/m tire fixes the spring through the ride rate $RR = k_1k_2/(k_1+k_2)$, and a damping ratio of 0.3 fixes the damper.
+
+| Parameter | Value | Where it came from |
+| --- | --- | --- |
+| Body mass $m_2$ | 375 kg | quarter of a 1500 kg car |
+| Wheel mass $m_1$ | 30 kg | typical wheel assembly |
+| Tire stiffness $k_1$ | 225 kN/m | midpoint of the 150 to 300 kN/m range |
+| Spring stiffness $k_2$ | 23.55 kN/m | solved from 1.2 Hz ride frequency |
+| Damping $b$ | 1783 N s/m | damping ratio 0.3 (Gillespie, p.148) |
+
+The check on the parameters is the wheel hop frequency, which I never chose directly: it falls out at 14.5 Hz, inside Gillespie's 10 to 15 Hz band. Simulating a body release then measured 1.175 Hz against the 1.2 Hz I designed for, a 2.1% error, which told me the solver and the hand calculations agreed.
+
+## Skyhook control
+
+Skyhook pretends the body hangs from a damper anchored to the sky, so the actuator fights the body's absolute velocity rather than suspension travel. As an internal force pair it adds one term to each equation and cancels when you sum them, which is a useful sanity check that no energy is being invented.
+
+$$
+c_c = 2\sqrt{\frac{k_1k_2}{k_1+k_2}\,m_2} = 5655\ \mathrm{N\,s/m}
+$$
+
+Targeting an effective damping ratio of 0.7 leaves the actuator responsible for the difference between that and the passive damper:
+
+$$
+F_a = -c_{\text{sky}}\,\dot{x}_2,
+\qquad
+c_{\text{sky}} = 0.7\,c_c - b = 2175\ \mathrm{N\,s/m}
+$$
+
+In the solver that is two lines:
+
+```python
+def deriv(t, y):
+    x1, x2, v1, v2 = y
+    F_a = -C_SKY * v2
+    a1 = (K2*(x2 - x1) + B*(v2 - v1) - K1*(x1 - road(t)) - F_a) / M1
+    a2 = (-K2*(x2 - x1) - B*(v2 - v1) + F_a) / M2
+    return [v1, v2, a1, a2]
+```
+
+Sizing the actuator by hand at resonance, with a 20 mm body amplitude, gives a peak of 328 N. The test bench later put the real worst case at 663 N, so the hand calculation was the right order of magnitude but not a spec I would have ordered hardware against.
+
+## Generating real roads
+
+A step or a cosine bump is not a road. The ISO 8608 standard describes real surfaces by their power spectral density, and the useful result is that measured road PSDs fall on a straight line of slope $-2$ on log-log axes. Only the intercept changes, so a single number, $G_d(n_0)$ at 0.1 cycles/m, sorts every road into classes A through H.
+
+$$
+G_d(n) = G_d(n_0)\left(\frac{n}{n_0}\right)^{-w}
+\quad\Longrightarrow\quad
+G_d(n) \propto n^{-2}
+$$
+
+<Figure src="active-suspension/iso8608-classes.png" caption="ISO 8608 ROAD CLASSES / PSD VS SPATIAL FREQUENCY" />
+
+### Power of an arbitrary sine wave
+
+To turn that curve into an actual surface I needed the amplitude of each wave, and the link is that the power a wave carries is its variance. So I derived the variance of a general sine wave, where $T = 2\pi/\omega$ is one period:
+
+$$
+\begin{aligned}
+\operatorname{Var}\!\big(A\sin(\omega t+\phi)\big)
+&\equiv \frac{1}{T}\int_{0}^{T} A^{2}\sin^{2}(\omega t+\phi)\,dt \\[4pt]
+&= \frac{A^{2}}{T\omega}\int_{\phi}^{\omega T+\phi} \sin^{2}u\,du
+&& u=\omega t+\phi \\[4pt]
+&= \frac{A^{2}}{2\omega T}\left[\,u-\frac{\sin 2u}{2}\,\right]_{\phi}^{\omega T+\phi} \\[4pt]
+&= \frac{A^{2}}{4\pi}\left[\,2\pi-\frac{\sin(4\pi+2\phi)-\sin 2\phi}{2}\,\right]
+&& T=\frac{2\pi}{\omega} \\[4pt]
+&= \frac{A^{2}}{4\pi}\,(2\pi)
+\;=\; \frac{A^{2}}{2}
+\end{aligned}
+$$
+
+The phase drops out entirely, which is what makes this usable: every wave contributes $A^2/2$ of power no matter where it starts. Setting that equal to the power in one PSD slice, $G_d(n_i)\,\Delta n$, gives the amplitude directly.
+
+$$
+\frac{A_i^{2}}{2} = G_d(n_i)\,\Delta n
+\quad\Longrightarrow\quad
+A_i = \sqrt{2\,G_d(n_i)\,\Delta n}
+$$
+
+### Building the surface
+
+Summing 1000 waves across 0.01 to 2 cycles/m then gives the profile:
+
+$$
+z(x) = \sum_i A_i \sin(2\pi n_i x + \phi_i)
+$$
+
+Each wave gets a random phase $\phi_i$, because waves left in sync produce an artificial-looking surface. Multiplying position by vehicle speed turns the profile into a function of time, which is what the solver needs. I tested on class C, a worn road, at 100 and 50 km/h over 400 m.
+
+<Figure src="active-suspension/generated-road-class-c.png" caption="SYNTHESIZED CLASS-C PROFILE / SEED 41" />
+
+## Test bench
+
+Lowering RMS acceleration is easy if you ignore what it costs. The bench therefore logs the three quantities that size real hardware alongside comfort: peak suspension travel $\max|x_2-x_1|$, peak tire deflection $\max|x_1-x_r|$, and peak actuator force.
+
+<Compare>
+  <Figure src="active-suspension/classc-passive.png" caption="CLASS-C ROAD / PASSIVE / RMS 1.675 M/S²" />
+  <Figure src="active-suspension/classc-skyhook.png" caption="CLASS-C ROAD / SKYHOOK / RMS 1.515 M/S²" />
+</Compare>
+
+<Compare>
+  <Figure src="active-suspension/resonance-passive.png" caption="RESONANCE ROAD / PASSIVE / RMS 0.870 M/S²" />
+  <Figure src="active-suspension/resonance-skyhook.png" caption="RESONANCE ROAD / SKYHOOK / RMS 0.373 M/S²" />
+</Compare>
+
+<Compare>
+  <Figure src="active-suspension/drop-test-passive.png" caption="BODY RELEASED 8 CM DOWN / PASSIVE / RMS 0.955 M/S²" />
+  <Figure src="active-suspension/drop-test-skyhook.png" caption="BODY RELEASED 8 CM DOWN / SKYHOOK / RMS 0.596 M/S²" />
+</Compare>
+
+| Road case | RMS accel. | Peak accel. | Susp. travel | Tire deflect. | Peak force |
+| --- | --- | --- | --- | --- | --- |
+| Class C, 100 km/h | -9.6% | -18.2% | -18.2% | -5.2% | 467 N |
+| 5 cm bump | -12.3% | -0.9% | **+7.5%** | -1.8% | 559 N |
+| Body released 8 cm down | -37.6% | -24.2% | -1.3% | -7.0% | 663 N |
+| Resonance road | -57.1% | -57.2% | -45.6% | -56.1% | 156 N |
+
+The result I did not expect is that comfort mostly came for free. Textbook suspension design treats ride and handling as a trade, but skyhook improved tire deflection in all four cases and suspension travel in three of them. The single penalty is 7.5% more suspension travel over the 5 cm bump, and it is worth knowing: on a discrete obstacle the actuator pushes the body up rather than letting the spring absorb the hit, so the stroke has to be there in the hardware.
+
+Gains are largest at resonance, which makes sense. That is where a passive damper is doing its worst work and where the skyhook term is most directly opposed to the motion.
+
+## Watching it move
+
+Body in orange, wheel in blue, road in grey. Passive on top, skyhook below, driving the same profile at the same speed.
+
+<Figure src="active-suspension/animation-class-c.mp4" autoplay caption="CLASS-C ROAD / PASSIVE (TOP) VS SKYHOOK (BOTTOM)" />
+
+<Figure src="active-suspension/animation-resonance.mp4" autoplay caption="RESONANCE ROAD / PASSIVE (TOP) VS SKYHOOK (BOTTOM)" />
+
+## Draw your own road
+
+This is an interactive version of the same model: draw a road profile in the lower panel and watch both suspensions drive it, with live RMS and actuator readouts. I had not built an animation before, so I gave Claude my parameters and derivations and had it write the front end. The physics and the numbers are mine; the interface is not my work.
+
+<Sim src="/sims/active-suspension.html" title="QUARTER-CAR PLAYGROUND / PASSIVE VS SKYHOOK" />
+
+## What is next
+
+Phase 1 only implements skyhook. Phase 2 puts preview control on top of it, feeding the road ahead of the wheel into the actuator command, and moves the model onto physical hardware.
+
+This page is the summary. I wrote a [full Phase 1 writeup](https://github.com/BenjaminTP/Active-Suspension-Project/blob/main/phase1_writeup.md) that carries every step at length: the equations of motion derived line by line, why each parameter was chosen and checked against Gillespie, the complete ISO 8608 and variance derivations, and all eight benchmark cases with their plots. If you want to see how I actually work through a problem, read that.

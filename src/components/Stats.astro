@@ -1,0 +1,50 @@
+---
+/**
+ * Headline result band: a row of measured numbers, instrument-cluster style.
+ * Use once per page, for the result that matters most. Numbers only:
+ * if a figure can't be traced to a simulation or a measurement, leave it out.
+ *
+ *   <Stats items={[{ value: "-57.1%", label: "RMS ACCEL / RESONANCE" }]} />
+ */
+interface Props {
+  items: { value: string; label: string }[];
+  note?: string;
+}
+const { items, note } = Astro.props;
+---
+<div class="stats">
+  {
+    items.map((s) => (
+      <div class="stat">
+        <span class="value display">{s.value}</span>
+        <span class="label mono-label">{s.label}</span>
+      </div>
+    ))
+  }
+</div>
+{note && <p class="note mono-label">{note}</p>}
+
+<style>
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+    gap: 1px;
+    background: var(--line); /* the gap becomes the hairline between tiles */
+    border: 1px solid var(--line);
+    clear: both;
+    margin: 1.6rem 0 0;
+  }
+  .stat {
+    background: var(--panel);
+    padding: 1rem 0.9rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .value {
+    color: var(--accent);
+    font-size: clamp(1.9rem, 5.5vw, 2.6rem);
+  }
+  .label { color: var(--muted); font-size: 0.6rem; line-height: 1.5; }
+  .note { color: var(--muted); margin: 0.6rem 0 0; font-size: 0.6rem; line-height: 1.6; }
+</style>

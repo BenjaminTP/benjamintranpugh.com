@@ -1,10 +1,12 @@
 ---
 /**
- * Image with caption for project pages.
+ * Image or video with caption for project pages.
  * `src` is relative to public/images/, e.g. "robot-arm-2/hero.jpg".
  * `align` = "full" (default) | "left" | "right".
+ * Video files (mp4/webm/mov) render as a player; set autoplay for a
+ * silent looping clip instead of one with controls.
  * If the file doesn't exist yet, a labeled hatched placeholder renders
- * instead — pages never look broken while photos are missing.
+ * instead, so pages never look broken while photos are missing.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -16,17 +18,30 @@ interface Props {
   align?: 'full' | 'left' | 'right';
   alt?: string;
   ratio?: string;
+  autoplay?: boolean;
 }
-const { src, caption, align = 'full', alt, ratio = '16/10' } = Astro.props;
-// resolve from project root — import.meta.url is unreliable after bundling
+const { src, caption, align = 'full', alt, ratio = '16/10', autoplay = false } = Astro.props;
+// resolve from project root: import.meta.url is unreliable after bundling
 const exists = fs.existsSync(path.join(process.cwd(), 'public', 'images', src));
+const isVideo = ['.mp4', '.webm', '.mov'].includes(path.extname(src).toLowerCase());
 ---
 <figure class={`fig fig-${align}`}>
   {
-    exists ? (
-      <img src={`/images/${src}`} alt={alt ?? caption ?? ''} loading="lazy" />
+    !exists ? (
+      <Placeholder label={`${isVideo ? 'VIDEO' : 'IMAGE'} / ${src}`} ratio={ratio} />
+    ) : isVideo ? (
+      <video
+        src={`/images/${src}`}
+        aria-label={alt ?? caption ?? ''}
+        controls={!autoplay}
+        autoplay={autoplay}
+        loop={autoplay}
+        muted
+        playsinline
+        preload="metadata"
+      />
     ) : (
-      <Placeholder label={`IMAGE — ${src}`} ratio={ratio} />
+      <img src={`/images/${src}`} alt={alt ?? caption ?? ''} loading="lazy" />
     )
   }
   {caption && <figcaption>{caption}</figcaption>}

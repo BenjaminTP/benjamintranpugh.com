@@ -11,19 +11,32 @@ const { project } = Astro.props;
 const { title, summary, telemetry, tags, cover } = project.data;
 const coverExists =
   cover && fs.existsSync(path.join(process.cwd(), 'public', 'images', cover));
+// a video cover plays silently on loop, the same way the home hero feature does
+const coverIsVideo =
+  !!cover && ['.mp4', '.webm', '.mov'].includes(path.extname(cover).toLowerCase());
 ---
 <a class="card" href={`/projects/${project.id}/`}>
   {
-    coverExists ? (
-      <img class="cover" src={`/images/${cover}`} alt={title} loading="lazy" />
+    !coverExists ? (
+      <Placeholder label={`PHOTO / ${title.toUpperCase()}`} />
+    ) : coverIsVideo ? (
+      <video
+        class="cover"
+        src={`/images/${cover}`}
+        aria-label={title}
+        autoplay
+        loop
+        muted
+        playsinline
+      />
     ) : (
-      <Placeholder label={`PHOTO — ${title.toUpperCase()}`} />
+      <img class="cover" src={`/images/${cover}`} alt={title} loading="lazy" />
     )
   }
   <span class="tele mono-label">{telemetry}</span>
   <h3>{title}</h3>
   <p>{summary}</p>
-  <span class="tags mono-label">{tags.join(' · ')}</span>
+  <span class="tags mono-label">{tags.join(' / ')}</span>
 </a>
 
 <style>
@@ -41,7 +54,7 @@ const coverExists =
   @media (prefers-reduced-motion: no-preference) {
     .card:hover { transform: translateY(-2px); }
   }
-  .cover { aspect-ratio: 16/10; object-fit: cover; border: 1px solid var(--line); width: 100%; }
+  .cover { aspect-ratio: 16/10; object-fit: cover; border: 1px solid var(--line); width: 100%; display: block; background: var(--panel-2); }
   .tele { color: var(--accent); }
   h3 { font-size: 1.12rem; font-weight: 700; letter-spacing: -0.005em; }
   p { font-size: 0.86rem; line-height: 1.55; color: var(--muted); margin: 0; flex: 1; }

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quarter-Car Road Playground | Passive vs Skyhook</title>
+<style>
+  /* ============ instrument-panel theme ============
+     Dark bench instrument; the one bright object is the cream
+     strip-chart paper you draw the road on (like a real chart recorder).
+     Skyhook additions borrow the scope vocabulary already here: the passive
+     run is a stored REFERENCE trace (dim, dashed); the skyhook run is live. */
+  :root{
+    --bg:#12161b; --panel:#1a2027; --edge:#2a323c; --ink:#c9d2db;
+    --dim:#7e8a96; --body-trace:#e8a33d; --wheel-trace:#4fb3c6;
+    --actuator:#8fd14f; --ref:rgba(232,163,61,.42);
+    --alert:#d9534f; --paper:#f4efdf; --paper-grid:#d8cfae; --pencil:#3a3e45;
+    --disp:"Avenir Next Condensed","Arial Narrow","Roboto Condensed",sans-serif;
+    --body:"Avenir Next","Segoe UI",system-ui,sans-serif;
+    --mono:"IBM Plex Mono","SF Mono","Cascadia Code",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);
+       padding:16px;display:flex;justify-content:center}
+  .rig{width:100%;max-width:960px}
+  header{display:flex;justify-content:space-between;align-items:baseline;
+         flex-wrap:wrap;gap:4px 16px;border-bottom:1px solid var(--edge);
+         padding-bottom:10px;margin-bottom:14px}
+  h1{font-family:var(--disp);font-weight:600;font-size:22px;letter-spacing:.14em;
+     text-transform:uppercase;margin:0;color:#e8edf2}
+  .plate{font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.7}
+  .lbl{font-family:var(--disp);font-size:12px;letter-spacing:.18em;
+       text-transform:uppercase;color:var(--dim);margin:14px 0 6px}
+  canvas{display:block;width:100%;border-radius:4px;touch-action:none}
+  #stage{background:var(--panel);border:1px solid var(--edge)}
+  #chart{background:var(--paper);border:1px solid #b9ae87;cursor:crosshair}
+  .readouts{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+  .chip{background:var(--panel);border:1px solid var(--edge);border-radius:4px;
+        padding:8px 10px}
+  .chip .k{font-family:var(--disp);font-size:11px;letter-spacing:.14em;
+           text-transform:uppercase;color:var(--dim)}
+  .chip .v{font-family:var(--mono);margin-top:3px;display:flex;
+           align-items:baseline;gap:5px}
+  .chip .p{font-size:14px;color:var(--dim)}          /* passive: reference */
+  .chip .ar{font-size:11px;color:var(--edge)}
+  .chip .s{font-size:18px;color:var(--body-trace)}   /* skyhook: live */
+  .chip .u{font-size:11px;color:var(--dim);margin-top:2px}
+  #roFa .s{color:var(--actuator)}
+  #roFa .p{color:var(--actuator);opacity:.55}
+  .win{color:var(--actuator)} .lose{color:var(--alert)}
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+  button{font-family:var(--disp);letter-spacing:.12em;text-transform:uppercase;
+         font-size:12px;color:var(--ink);background:var(--panel);
+         border:1px solid var(--edge);border-radius:4px;padding:8px 14px;cursor:pointer}
+  button:hover{border-color:var(--dim)}
+  button:focus-visible{outline:2px solid var(--body-trace);outline-offset:2px}
+  #play{background:var(--body-trace);color:#1c1607;border-color:var(--body-trace);
+        font-weight:600;min-width:96px}
+  .speed{display:flex;align-items:center;gap:8px;margin-left:auto;
+         font-family:var(--mono);font-size:12px}
+  .seed{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .seed input{width:60px;font-family:var(--mono);font-size:12px;color:var(--ink);
+              background:var(--panel);border:1px solid var(--edge);border-radius:4px;padding:5px 6px;margin-left:4px}
+  .gain{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px;
+        font-family:var(--mono);font-size:12px;padding:9px 12px;
+        background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+  .gain .tag{font-family:var(--disp);font-size:11px;letter-spacing:.14em;
+             text-transform:uppercase;color:var(--dim)}
+  .gain .zed{color:var(--dim);margin-left:auto}
+  .gain .zed b{color:var(--ink);font-weight:400}
+  input[type=range]{accent-color:var(--body-trace);width:150px}
+  #csky{width:220px;accent-color:var(--actuator)}
+  .note{font-size:11.5px;color:var(--dim);margin-top:12px;line-height:1.6}
+  .note b{color:var(--ink);font-weight:600}
+  #done{font-family:var(--mono);font-size:12px;color:var(--alert);margin-top:8px;
+        min-height:16px;line-height:1.6}
+  @media (max-width:820px){.readouts{grid-template-columns:repeat(2,1fr)}}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="rig">
+  <header>
+    <h1>Quarter-Car Road Playground</h1>
+    <div class="plate">m&#8321; 30 kg &nbsp;m&#8322; 375 kg &nbsp;k&#8321; 225 kN/m &nbsp;k&#8322; 23.55 kN/m &nbsp;b 1783 N s/m<br>
+      R_r 21 319 N/m &nbsp;c_c 5655 N s/m &nbsp;f_body 1.18 Hz</div>
+  </header>
+
+  <div class="lbl">Playback: vertical motion exaggerated &times;3 / solid = skyhook, dashed = passive</div>
+  <canvas id="stage" height="320"></canvas>
+
+  <div class="readouts">
+    <div class="chip" id="roA2"><div class="k">body accel</div>
+      <div class="v"><span class="p">-</span><span class="ar">&rarr;</span><span class="s">-</span></div>
+      <div class="u">m/s&sup2;</div></div>
+    <div class="chip" id="roRms"><div class="k">RMS accel</div>
+      <div class="v"><span class="p">-</span><span class="ar">&rarr;</span><span class="s">-</span></div>
+      <div class="u">m/s&sup2; / comfort</div></div>
+    <div class="chip" id="roTrv"><div class="k">susp. travel</div>
+      <div class="v"><span class="p">-</span><span class="ar">&rarr;</span><span class="s">-</span></div>
+      <div class="u">mm / working space</div></div>
+    <div class="chip" id="roTir"><div class="k">tire deflection</div>
+      <div class="v"><span class="p">-</span><span class="ar">&rarr;</span><span class="s">-</span></div>
+      <div class="u">mm / grip</div></div>
+    <div class="chip" id="roFa"><div class="k">actuator F&#8336;</div>
+      <div class="v"><span class="s">-</span><span class="ar">pk</span><span class="p">-</span></div>
+      <div class="u">N / the price</div></div>
+  </div>
+  <div id="done"></div>
+
+  <div class="controls">
+    <button id="play">&#9654; Play</button>
+    <button id="reset">Rewind</button>
+    <button id="clear">Clear road</button>
+    <button id="bump">5 cm bump</button>
+    <button id="classc">Class C</button>
+    <span class="seed">seed<input id="seed" type="number" value="42" min="0" step="1"></span>
+    <button id="res">Resonance road</button>
+    <div class="speed"><span>speed</span>
+      <input id="vel" type="range" min="5" max="40" step="1" value="15">
+      <span id="velv">15 m/s</span></div>
+  </div>
+
+  <div class="gain">
+    <span class="tag">skyhook gain c_sky</span>
+    <input id="csky" type="range" min="0" max="6000" step="25" value="2175">
+    <span id="cskyv">2175 N s/m</span>
+    <span class="zed">&zeta;_sky <b id="zs">0.385</b> &nbsp;/&nbsp; &zeta;_eff <b id="ze">0.700</b></span>
+  </div>
+
+  <div class="lbl">Road profile: drag to draw / 120 m long / &plusmn;10 cm</div>
+  <canvas id="chart" height="150"></canvas>
+
+  <p class="note">Both runs use the <b>same road array and the same speed</b>, and the only difference
+  is the actuator. Passive is the dashed reference body; skyhook is the solid one.
+  Control law is <b>F&#8336; = &minus;c_sky &#7819;&#8322;</b>, force applied &minus;F&#8336; on m&#8321; and +F&#8336; on m&#8322;
+  (one internal force, both ends). Set <b>c_sky = 0</b> and the two bodies must overlap
+  exactly. That is the passive gate, run it visually before trusting anything else.
+  <br>Same equations and parameters as <b>passive_baseline.py</b>, re-implemented in
+  JavaScript and integrated with fixed-step RK4 (dt&nbsp;=&nbsp;1&nbsp;ms). Drawn roads are lightly
+  smoothed so pixel jaggies don&rsquo;t inject fake high frequencies. &ldquo;Resonance road&rdquo; is a
+  10.7&nbsp;mm sine whose wavelength lands at 1.18&nbsp;Hz <i>for the current speed</i>, so it retunes
+  itself when you move the speed slider.</p>
+</div>
+
+<script>
+"use strict";
+
+/* ======================= PHYSICS CORE ============================
+   Mirrors passive_baseline.py line for line. If you change the model
+   there, change it here. Pure functions, no page code below this
+   block leaks in. */
+
+const P = { m1: 30, m2: 375, k1: 225000, k2: 23550, b: 1783 };
+
+/* Skyhook design constants, straight off the hand derivation.
+   R_r = ride rate: the body sees k1 and k2 in SERIES, so this, not k2,
+         is the stiffness that sets its critical damping.
+   c_c = 2*sqrt(R_r*m2): the damping that would just stop the body oscillating.
+   zeta_b = b/c_c: the PHYSICAL damper's share. Fixed. Not a design variable. */
+const R_R    = P.k1 * P.k2 / (P.k1 + P.k2);     // 21 318.6 N/m
+const C_C    = 2 * Math.sqrt(R_R * P.m2);       //  5 654.9 N s/m
+const ZETA_B = P.b / C_C;                       //  0.3153
+const F_BODY = 1.18;                            // Hz, from the eigenvalue gate
+
+/* deriv(): the SAME four first-order equations as Python's deriv(), plus F_a.
+   State z = [x1, x2, v1, v2]: positions first, then velocities.
+   F_a = -cSky*v2 is the whole controller. It opposes ABSOLUTE body velocity,
+   which is why it fades to nothing above resonance where v2 -> 0.
+   cSky = 0 makes Fa identically 0 and every term below reduces to the
+   passive baseline exactly: the gate is structural, not a promise. */
+function deriv(z, xr, cSky) {
+  const x1 = z[0], x2 = z[1], v1 = z[2], v2 = z[3];
+  const Fa = -cSky * v2;                 // + pushes body UP, wheel DOWN
+  const a1 = (-(P.k1 + P.k2) * x1 + P.k2 * x2 - P.b * v1 + P.b * v2 + P.k1 * xr - Fa) / P.m1;
+  const a2 = ( P.k2 * x1 - P.k2 * x2 + P.b * v1 - P.b * v2                        + Fa) / P.m2;
+  return [v1, v2, a1, a2];              // note the damper sign flip a1 vs a2,
+}                                       // and the SAME flip on Fa: Newton's 3rd
+
+/* Classic fixed-step RK4. solve_ivp adapts its step size; here a fixed
+   1 ms step is plenty (wheel-hop period ~74 ms) and keeps playback simple. */
+function rk4Step(z, t, dt, roadAt, cSky) {
+  const ka = deriv(z, roadAt(t), cSky);
+  const zb = z.map((s, i) => s + 0.5 * dt * ka[i]);
+  const kb = deriv(zb, roadAt(t + 0.5 * dt), cSky);
+  const zc = z.map((s, i) => s + 0.5 * dt * kb[i]);
+  const kc = deriv(zc, roadAt(t + 0.5 * dt), cSky);
+  const zd = z.map((s, i) => s + dt * kc[i]);
+  const kd = deriv(zd, roadAt(t + dt), cSky);
+  return z.map((s, i) => s + (dt / 6) * (ka[i] + 2 * kb[i] + 2 * kc[i] + kd[i]));
+}
+
+/* Road height as a smooth function of DISTANCE s [m]: linear interpolation
+   between the N drawn samples. Driving at speed v turns it into a function
+   of time: x_r(t) = height(v * t). */
+function makeRoadInterp(profile, lengthM) {
+  const n = profile.length;
+  return function (s) {
+    const u = Math.min(Math.max(s, 0), lengthM) / lengthM * (n - 1);
+    const i0 = Math.floor(u), f = u - i0;
+    if (i0 >= n - 1) return profile[n - 1];
+    return profile[i0] * (1 - f) + profile[i0 + 1] * f;
+  };
+}
+
+/* Run the whole pass over the road up front (it's instant), store the
+   trajectory, then playback just reads it back in real time.
+   Called TWICE, once with cSky = 0 and once with the live gain, on the same
+   profile array and the same v. Same road, not just the same seed. */
+function simulate(profile, v, lengthM, dt, cSky) {
+  const roadAt = makeRoadInterp(profile, lengthM);
+  const steps = Math.floor(lengthM / v / dt);
+  const x1 = new Float64Array(steps), x2 = new Float64Array(steps);
+  const a2 = new Float64Array(steps), rms = new Float64Array(steps);
+  const xr = new Float64Array(steps), fa = new Float64Array(steps);
+  const h0 = roadAt(0);
+  let z = [h0, h0, 0, 0];       // start settled ON the road's starting height
+  let t = 0, cum = 0, cumF = 0, pkA = 0, pkT = 0, pkD = 0, pkF = 0, pkX = 0;
+  for (let i = 0; i < steps; i++) {
+    const r = roadAt(v * t);
+    const d = deriv(z, r, cSky);
+    x1[i] = z[0]; x2[i] = z[1]; a2[i] = d[3]; xr[i] = r;
+    fa[i] = -cSky * z[3];
+    cum  += d[3] * d[3];
+    cumF += fa[i] * fa[i];
+    rms[i] = Math.sqrt(cum / (i + 1));
+    pkA = Math.max(pkA, Math.abs(d[3]));
+    pkT = Math.max(pkT, Math.abs(z[1] - z[0]));
+    pkD = Math.max(pkD, Math.abs(z[0] - r));
+    pkF = Math.max(pkF, Math.abs(fa[i]));
+    pkX = Math.max(pkX, Math.abs(z[1] - r));      // body travel about the road
+    z = rk4Step(z, t, dt, (tt) => roadAt(v * tt), cSky);
+    t += dt;
+  }
+  return { dt, steps, v, cSky, x1, x2, a2, rms, xr, fa,
+           peakA2: pkA, peakTravel: pkT, peakTire: pkD, peakFa: pkF, peakX2: pkX,
+           rmsFinal: rms[steps - 1] || 0, rmsFa: Math.sqrt(cumF / steps) || 0 };
+}
+/* ===================== END PHYSICS CORE ========================== */
+
+
+/* ------------------------- road data ---------------------------- */
+const LENGTH = 120;            // road length [m]
+const N = 600;                 // drawn samples (0.2 m spacing)
+const HMAX = 0.10;             // drawable height limit [m]
+const VGAIN = 3;               // vertical exaggeration on screen
+const DT = 0.001;              // sim step [s]
+const profile = new Float64Array(N);
+let preset = "bump";           // which generator owns the profile right now
+
+/* ---- ISO 8608 Class C spectrum / same law + coefficients as road_generator.py ---- */
+const GD_N0 = 256e-6;          // m³ / Class C PSD at n0   (A 16e-6 / B 64e-6 / C 256e-6 / D 1024e-6)
+const N0    = 0.1;             // cycles/m / reference spatial frequency
+const NMIN  = 0.011;           // cycles/m / ISO band floor (~91 m wavelength)
+const NMAX  = 2.5;             // cycles/m / capped at this profile's 0.2 m grid Nyquist
+const NCOMP = 1000;            // sinusoids / dn≈0.0025 → ~400 m coherence, no repeat inside 120 m
+let   seedC = 42;              // current Class C phase seed
+
+function clearRoad() { profile.fill(0); }
+
+function bumpPreset() {        // the same 5 cm raised cosine as Python,
+  clearRoad();                 // placed 18–21 m down the road
+  for (let i = 0; i < N; i++) {
+    const s = i * LENGTH / (N - 1);
+    if (s >= 18 && s <= 21)
+      profile[i] = 0.025 * (1 - Math.cos(2 * Math.PI * (s - 18) / 3));
+  }
+}
+
+/* deterministic PRNG so a given seed always redraws the same road */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ISO 8608 Class C by sum-of-sinusoids, the standard synthesis:
+   x_r(s) = Σ A_k sin(2π n_k s + φ_k),  A_k = √(2 Gd(n_k) dn),
+   Gd(n) = Gd(n0) (n/n0)⁻²,  φ_k ~ U(0,2π) from the seeded PRNG.
+   Not smoothed; it's band-limited to NMAX by construction. */
+function classCPreset(seed) {
+  const rand = mulberry32(seed >>> 0);
+  const dn = (NMAX - NMIN) / NCOMP;
+  const nk = new Float64Array(NCOMP), amp = new Float64Array(NCOMP), ph = new Float64Array(NCOMP);
+  for (let k = 0; k < NCOMP; k++) {
+    const n = NMIN + (k + 0.5) * dn;                        // band-centre frequency
+    nk[k]  = n;
+    amp[k] = Math.sqrt(2 * GD_N0 * Math.pow(n / N0, -2) * dn);
+    ph[k]  = 2 * Math.PI * rand();
+  }
+  for (let i = 0; i < N; i++) {
+    const s = i * LENGTH / (N - 1);
+    let h = 0;
+    for (let k = 0; k < NCOMP; k++) h += amp[k] * Math.sin(2 * Math.PI * nk[k] * s + ph[k]);
+    profile[i] = h;
+  }
+}
+
+/* The worst case, on purpose: a sine whose wavelength arrives at exactly the
+   body-bounce frequency for the CURRENT speed. lambda = v/f_body.
+   10.7 mm amplitude is the road that drives the passive body to ~20 mm
+   (passive T_peak = 1.876). This is the run that tests the assumed X = 20 mm. */
+function resonancePreset() {
+  const lam = vel() / F_BODY;
+  for (let i = 0; i < N; i++) {
+    const s = i * LENGTH / (N - 1);
+    profile[i] = 0.0107 * Math.sin(2 * Math.PI * s / lam);
+  }
+}
+
+function smoothProfile() {     // two 1-2-1 passes: kill pixel jaggies
+  for (let pass = 0; pass < 2; pass++) {
+    const c = Float64Array.from(profile);
+    for (let i = 1; i < N - 1; i++)
+      profile[i] = 0.25 * c[i - 1] + 0.5 * c[i] + 0.25 * c[i + 1];
+  }
+}
+
+/* --------------------- playback state --------------------------- */
+let simP = null;               // passive run  (cSky = 0),  the reference
+let simS = null;               // skyhook run  (cSky = gain), the live one
+let playing = false;
+let tPlay = 0;                 // playback clock [s]
+let lastTs = null;
+
+function invalidate()  { simP = simS = null; tPlay = 0; playing = false; setPlayLabel(); doneEl.textContent = ""; }
+function regain()      { simS = null; doneEl.textContent = ""; }   // gain moved: keep the clock
+function ensureSim()   {
+  if (!simP) simP = simulate(profile, vel(), LENGTH, DT, 0);
+  if (!simS) simS = simulate(profile, vel(), LENGTH, DT, cSky());
+}
+function vel()  { return Number(velEl.value); }
+function cSky() { return Number(cskyEl.value); }
+
+/* ------------------------- elements ----------------------------- */
+const stage = document.getElementById("stage");
+const chart = document.getElementById("chart");
+const sctx = stage.getContext("2d");
+const cctx = chart.getContext("2d");
+const playEl = document.getElementById("play");
+const velEl = document.getElementById("vel");
+const velvEl = document.getElementById("velv");
+const cskyEl = document.getElementById("csky");
+const cskyvEl = document.getElementById("cskyv");
+const zsEl = document.getElementById("zs");
+const zeEl = document.getElementById("ze");
+const doneEl = document.getElementById("done");
+const ro = {
+  a2:  document.querySelector("#roA2 .s"),  a2p:  document.querySelector("#roA2 .p"),
+  rms: document.querySelector("#roRms .s"), rmsp: document.querySelector("#roRms .p"),
+  rmsu:document.querySelector("#roRms .u"),
+  trv: document.querySelector("#roTrv .s"), trvp: document.querySelector("#roTrv .p"),
+  tir: document.querySelector("#roTir .s"), tirp: document.querySelector("#roTir .p"),
+  fa:  document.querySelector("#roFa .s"),  fap:  document.querySelector("#roFa .p"),
+};
+
+function fitCanvases() {       // crisp on any screen width / DPR
+  const dpr = window.devicePixelRatio || 1;
+  for (const c of [stage, chart]) {
+    const w = c.clientWidth;
+    const h = Number(c.getAttribute("height"));
+    c.width = w * dpr; c.height = h * dpr;
+    c.getContext("2d").setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+}
+window.addEventListener("resize", fitCanvases);
+
+/* ----------------------- chart (editor) ------------------------- */
+const CH = 150;
+function chartXY() {           // mapping helpers
+  const w = chart.clientWidth;
+  return {
+    sToX: (s) => s / LENGTH * w,
+    xToI: (x) => Math.round(Math.min(Math.max(x / w, 0), 1) * (N - 1)),
+    hToY: (h) => CH / 2 - h / HMAX * (CH / 2 - 8),
+    yToH: (y) => Math.min(Math.max((CH / 2 - y) / (CH / 2 - 8) * HMAX, -HMAX), HMAX),
+  };
+}
+
+function renderChart() {
+  const w = chart.clientWidth, m = chartXY();
+  cctx.clearRect(0, 0, w, CH);
+  cctx.strokeStyle = "#e6ddbd"; cctx.lineWidth = 1;            // 1 m grid
+  for (let s = 0; s <= LENGTH; s += 1) {
+    const x = m.sToX(s); cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, CH); cctx.stroke();
+  }
+  cctx.strokeStyle = "#d8cfae";                                 // 10 m + 2.5 cm grid
+  for (let s = 0; s <= LENGTH; s += 10) {
+    const x = m.sToX(s); cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, CH); cctx.stroke();
+  }
+  for (let h = -HMAX; h <= HMAX + 1e-9; h += 0.025) {
+    const y = m.hToY(h); cctx.beginPath(); cctx.moveTo(0, y); cctx.lineTo(w, y); cctx.stroke();
+  }
+  cctx.strokeStyle = "rgba(190,60,50,.55)"; cctx.lineWidth = 1.2; // chart-paper red zero line
+  cctx.beginPath(); cctx.moveTo(0, m.hToY(0)); cctx.lineTo(w, m.hToY(0)); cctx.stroke();
+
+  cctx.strokeStyle = "#3a3e45"; cctx.lineWidth = 2;             // the drawn road, in pencil
+  cctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const x = i / (N - 1) * w, y = m.hToY(profile[i]);
+    i ? cctx.lineTo(x, y) : cctx.moveTo(x, y);
+  }
+  cctx.stroke();
+
+  cctx.fillStyle = "#8a7f5c"; cctx.font = "10px " + getComputedStyle(document.body).getPropertyValue("--mono");
+  cctx.fillText("0 m", 4, CH - 6); cctx.fillText("120 m", w - 38, CH - 6);
+  cctx.fillText("+10 cm", 4, 12); cctx.fillText("\u221210 cm", 4, CH / 2 + (CH / 2 - 8) - 2);
+
+  if (simS) {                                                   // sweep cursor
+    const x = m.sToX(Math.min(vel() * tPlay, LENGTH));
+    cctx.strokeStyle = "#e8a33d"; cctx.lineWidth = 2;
+    cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, CH); cctx.stroke();
+  }
+}
+
+/* drawing interaction: drag to set heights, interpolating between
+   pointer samples so fast strokes leave no gaps */
+let drawing = false, lastI = null, lastH = null;
+function drawAt(ev) {
+  const r = chart.getBoundingClientRect(), m = chartXY();
+  const i = m.xToI(ev.clientX - r.left);
+  const h = m.yToH((ev.clientY - r.top) * (CH / r.height));
+  if (lastI !== null && Math.abs(i - lastI) > 1) {
+    const lo = Math.min(i, lastI), hi = Math.max(i, lastI);
+    for (let j = lo; j <= hi; j++)
+      profile[j] = lastH + (h - lastH) * ((j - lastI) / (i - lastI));
+  } else profile[i] = h;
+  lastI = i; lastH = h;
+}
+chart.addEventListener("pointerdown", (e) => {
+  drawing = true; lastI = null; playing = false; preset = "custom"; setPlayLabel();
+  chart.setPointerCapture(e.pointerId); drawAt(e); invalidate();
+});
+chart.addEventListener("pointermove", (e) => { if (drawing) { drawAt(e); } });
+chart.addEventListener("pointerup", () => {
+  if (!drawing) return;
+  drawing = false; smoothProfile(); invalidate();
+});
+
+/* ----------------------- stage (playback) ----------------------- */
+const SH = 320, ROADBASE = 250, PPMV = 320;   // px per metre, vertical
+const TIRE_REST = 46, SPRING_REST = 70, WHEEL_R = 16;
+const CAR_AT = 0.35;                          // car sits 35 % from the left
+const WINDOW_M = 30;                          // metres visible on stage
+const N_PER_PX = 8;                           // force-arrow scale: N per pixel
+
+function yOf(h) { return ROADBASE - h * VGAIN * PPMV; }
+
+function zigzag(ctx, x, y0, y1, n, amp) {     // spring symbol between y0..y1
+  ctx.beginPath(); ctx.moveTo(x, y0);
+  const seg = (y1 - y0) / (n + 2);
+  ctx.lineTo(x, y0 + seg);
+  for (let i = 0; i < n; i++)
+    ctx.lineTo(x + (i % 2 ? -amp : amp), y0 + seg * (i + 1.5));
+  ctx.lineTo(x, y1 - seg); ctx.lineTo(x, y1); ctx.stroke();
+}
+
+function arrow(ctx, x, y, dy) {               // force arrow, tail at (x,y)
+  if (Math.abs(dy) < 3) return;
+  const s = Math.sign(dy);
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + dy);
+  ctx.moveTo(x - 4, y + dy - 5 * s); ctx.lineTo(x, y + dy);
+  ctx.lineTo(x + 4, y + dy - 5 * s); ctx.stroke();
+}
+
+function renderStage(idx) {
+  const w = stage.clientWidth;
+  sctx.clearRect(0, 0, w, SH);
+  const d = simS ? Math.min(vel() * tPlay, LENGTH) : 0;   // car distance [m]
+  const road = makeRoadInterp(profile, LENGTH);
+  const left = d - CAR_AT * WINDOW_M;
+  const sToX = (s) => (s - left) / WINDOW_M * w;
+  const cx = CAR_AT * w;
+
+  sctx.strokeStyle = "#232b34";                          // faint scope grid
+  for (let gx = Math.ceil(left); gx <= left + WINDOW_M; gx++) {
+    sctx.beginPath(); sctx.moveTo(sToX(gx), 0); sctx.lineTo(sToX(gx), SH); sctx.stroke();
+  }
+
+  sctx.strokeStyle = "#6b7684"; sctx.lineWidth = 2;      // road surface
+  sctx.beginPath();
+  for (let px = 0; px <= w; px += 2) {
+    const s = left + px / w * WINDOW_M;
+    const y = yOf(s >= 0 && s <= LENGTH ? road(s) : 0);
+    px ? sctx.lineTo(px, y) : sctx.moveTo(px, y);
+  }
+  sctx.stroke();
+  sctx.strokeStyle = "#39424d"; sctx.lineWidth = 1;      // ground hatching
+  for (let px = 0; px <= w; px += 14) {
+    const s = left + px / w * WINDOW_M;
+    const y = yOf(s >= 0 && s <= LENGTH ? road(s) : 0);
+    sctx.beginPath(); sctx.moveTo(px, y + 2); sctx.lineTo(px - 8, y + 12); sctx.stroke();
+  }
+
+  /* ---- trails: where each mass HAS BEEN, plotted at the distance it was
+     there. Sample j happened at s = v*j*dt, so the history drops straight onto
+     the same distance axis as the road underneath it. Alpha ramps to zero at
+     the window's left edge so it reads as motion, not as a fifth trace.
+     Solid = skyhook, dashed = passive. Both off the same road array. */
+  const OFF_M1 = TIRE_REST;                      // wheel centre
+  const OFF_M2 = TIRE_REST + SPRING_REST + 22;   // body centre
+
+  function fade(rgb, a) {                        // oldest end transparent
+    const g = sctx.createLinearGradient(0, 0, cx, 0);
+    g.addColorStop(0, "rgba(" + rgb + ",0)");
+    g.addColorStop(1, "rgba(" + rgb + "," + a + ")");
+    return g;
+  }
+  function trail(sim, arr, off, rgb, a, dashed) {
+    if (!sim || idx < 1) return;
+    const j0 = Math.max(0, Math.ceil(left / (sim.v * sim.dt)));   // oldest visible sample
+    if (idx <= j0) return;
+    const stride = Math.max(1, Math.floor((idx - j0) / 320));     // ~320 pts is plenty
+    sctx.save();
+    if (dashed) sctx.setLineDash([4, 4]);
+    sctx.strokeStyle = fade(rgb, a);
+    sctx.lineWidth = dashed ? 1.2 : 1.8;
+    sctx.beginPath();
+    sctx.moveTo(sToX(sim.v * j0 * sim.dt), yOf(arr[j0]) - off);
+    for (let j = j0 + stride; j <= idx; j += stride)
+      sctx.lineTo(sToX(sim.v * j * sim.dt), yOf(arr[j]) - off);
+    sctx.lineTo(sToX(sim.v * idx * sim.dt), yOf(arr[idx]) - off); // land on the car
+    sctx.stroke();
+    sctx.restore();
+  }
+
+  if (simP) {                                    // reference: actuator off
+    trail(simP, simP.x1, OFF_M1, "79,179,198",  .34, true);
+    trail(simP, simP.x2, OFF_M2, "232,163,61",  .34, true);
+  }
+  if (simS) {                                    // live: actuator on
+    trail(simS, simS.x1, OFF_M1, "79,179,198",  .80, false);
+    trail(simS, simS.x2, OFF_M2, "232,163,61",  .80, false);
+  }
+
+  const live = simS && idx >= 0;                          // current state
+  const x1 = live ? simS.x1[idx] : road(0);
+  const x2 = live ? simS.x2[idx] : road(0);
+  const ref = simP && idx >= 0;
+  const x1p = ref ? simP.x1[idx] : road(0);              // passive wheel, same instant
+  const x2p = ref ? simP.x2[idx] : road(0);              // passive body, same instant
+  const rHere = live ? simS.xr[idx] : road(0);
+  const FaNow = live ? simS.fa[idx] : 0;
+  const yRoad = yOf(rHere);
+  const yWheel = yOf(x1) - TIRE_REST;                    // wheel centre
+  const yBodyB = yOf(x2) - TIRE_REST - SPRING_REST;      // body bottom edge
+
+  sctx.strokeStyle = "#4fb3c6"; sctx.lineWidth = 2;      // tire spring k1
+  zigzag(sctx, cx, yWheel + WHEEL_R, yRoad, 4, 7);
+
+  sctx.strokeStyle = "#e8a33d";                          // suspension k2
+  zigzag(sctx, cx - 22, yBodyB, yWheel - WHEEL_R, 5, 8);
+  sctx.beginPath();                                      // damper b
+  sctx.moveTo(cx + 2, yBodyB); sctx.lineTo(cx + 2, (yBodyB + yWheel - WHEEL_R) / 2);
+  sctx.moveTo(cx + 2, yWheel - WHEEL_R); sctx.lineTo(cx + 2, (yBodyB + yWheel - WHEEL_R) / 2 + 8);
+  sctx.stroke();
+  sctx.strokeRect(cx - 4, (yBodyB + yWheel - WHEEL_R) / 2 - 8, 12, 16);
+
+  sctx.strokeStyle = "#8fd14f";                          // actuator F_a
+  sctx.beginPath();
+  sctx.moveTo(cx + 26, yBodyB); sctx.lineTo(cx + 26, yWheel - WHEEL_R);
+  sctx.stroke();
+  sctx.fillStyle = "#12161b";
+  sctx.fillRect(cx + 20, (yBodyB + yWheel - WHEEL_R) / 2 - 9, 12, 18);
+  sctx.strokeRect(cx + 20, (yBodyB + yWheel - WHEEL_R) / 2 - 9, 12, 18);
+
+  // passive reference masses: same road, same instant, actuator off
+  const yGhost = yOf(x2p) - TIRE_REST - SPRING_REST;
+  sctx.save();
+  sctx.setLineDash([5, 4]); sctx.lineWidth = 1.4;
+  sctx.strokeStyle = "rgba(79,179,198,.45)";
+  sctx.beginPath(); sctx.arc(cx, yOf(x1p) - TIRE_REST, WHEEL_R, 0, 2 * Math.PI); sctx.stroke();
+  sctx.strokeStyle = "rgba(232,163,61,.45)";
+  sctx.strokeRect(cx - 52, yGhost - 44, 104, 44);
+  sctx.restore();
+
+  sctx.fillStyle = "#4fb3c6";                            // wheel m1
+  sctx.beginPath(); sctx.arc(cx, yWheel, WHEEL_R, 0, 2 * Math.PI); sctx.fill();
+  sctx.fillStyle = "#12161b";
+  sctx.font = "bold 11px " + getComputedStyle(document.body).getPropertyValue("--mono");
+  sctx.textAlign = "center"; sctx.fillText("m1", cx, yWheel + 4);
+
+  sctx.fillStyle = "#e8a33d";                            // body m2
+  sctx.fillRect(cx - 52, yBodyB - 44, 104, 44);
+  sctx.fillStyle = "#1c1607"; sctx.fillText("m2", cx, yBodyB - 18);
+
+  // F_a on the body: +F_a pushes it UP. Scaled 1 px per 8 N, clamped to ±60.
+  const dy = Math.max(-60, Math.min(60, -FaNow / N_PER_PX));
+  sctx.strokeStyle = "#8fd14f"; sctx.lineWidth = 2.5;
+  arrow(sctx, cx + 68, yBodyB - 22, dy);
+  sctx.textAlign = "left";
+}
+
+/* ------------------------- readouts ----------------------------- */
+function fmt(x, d) { return x.toFixed(d); }
+function dash() {
+  for (const k of ["a2","a2p","rms","rmsp","trv","trvp","tir","tirp","fa","fap"]) ro[k].textContent = "-";
+  ro.rmsu.innerHTML = "m/s&sup2; / comfort";
+}
+function updateReadouts(idx) {
+  if (!simS || !simP || idx < 0) { dash(); return; }
+  ro.a2p.textContent  = fmt(simP.a2[idx], 2);
+  ro.a2.textContent   = fmt(simS.a2[idx], 2);
+  ro.rmsp.textContent = fmt(simP.rms[idx], 3);
+  ro.rms.textContent  = fmt(simS.rms[idx], 3);
+  ro.trvp.textContent = fmt((simP.x2[idx] - simP.x1[idx]) * 1000, 1);
+  ro.trv.textContent  = fmt((simS.x2[idx] - simS.x1[idx]) * 1000, 1);
+  ro.tirp.textContent = fmt((simP.x1[idx] - simP.xr[idx]) * 1000, 1);
+  ro.tir.textContent  = fmt((simS.x1[idx] - simS.xr[idx]) * 1000, 1);
+  ro.fa.textContent   = fmt(simS.fa[idx], 0);
+  ro.fap.textContent  = fmt(simS.peakFa, 0);
+
+  // live comfort delta: negative = skyhook winning
+  const p = simP.rms[idx];
+  if (p > 1e-9) {
+    const d = (simS.rms[idx] - p) / p * 100;
+    ro.rmsu.innerHTML = "m/s&sup2; / comfort &nbsp;<span class='" +
+      (d <= 0 ? "win" : "lose") + "'>" + (d > 0 ? "+" : "") + fmt(d, 1) + "%</span>";
+  } else ro.rmsu.innerHTML = "m/s&sup2; / comfort";
+}
+
+/* ------------------------ main rAF loop ------------------------- */
+function setPlayLabel() {
+  const end = simS && tPlay >= simS.steps * simS.dt;
+  playEl.innerHTML = playing ? "&#10073;&#10073; Pause" : (end ? "&#8635; Replay" : "&#9654; Play");
+}
+
+function summary() {
+  const dR = (simS.rmsFinal - simP.rmsFinal) / simP.rmsFinal * 100;
+  const dT = (simS.peakTravel - simP.peakTravel) / simP.peakTravel * 100;
+  const dD = (simS.peakTire - simP.peakTire) / simP.peakTire * 100;
+  return `run complete / c_sky ${simS.cSky}, ` +
+    `RMS accel ${fmt(simP.rmsFinal,3)} → ${fmt(simS.rmsFinal,3)} m/s² (${dR>0?"+":""}${fmt(dR,1)}%)` +
+    ` / peak travel ${fmt(simP.peakTravel*1000,1)} → ${fmt(simS.peakTravel*1000,1)} mm (${dT>0?"+":""}${fmt(dT,1)}%)` +
+    ` / peak tire defl ${fmt(simP.peakTire*1000,1)} → ${fmt(simS.peakTire*1000,1)} mm (${dD>0?"+":""}${fmt(dD,1)}%)` +
+    `<br>peak body travel ${fmt(simP.peakX2*1000,1)} → ${fmt(simS.peakX2*1000,1)} mm` +
+    ` / F_a peak ${fmt(simS.peakFa,1)} N, RMS ${fmt(simS.rmsFa,1)} N`;
+}
+
+function frame(ts) {
+  if (!drawing) ensureSim();                           // no-op once cached
+  if (playing && simS) {
+    if (lastTs !== null) tPlay += (ts - lastTs) / 1000;
+    lastTs = ts;
+    if (tPlay >= simS.steps * simS.dt) {               // run complete
+      tPlay = simS.steps * simS.dt; playing = false; setPlayLabel();
+      doneEl.innerHTML = summary();
+    }
+  } else lastTs = ts;
+  const idx = simS ? Math.min(Math.floor(tPlay / simS.dt), simS.steps - 1) : -1;
+  renderStage(idx); renderChart(); updateReadouts(idx);
+  requestAnimationFrame(frame);
+}
+
+/* ------------------------- controls ----------------------------- */
+playEl.addEventListener("click", () => {
+  ensureSim();
+  if (!playing && tPlay >= simS.steps * simS.dt) tPlay = 0;  // replay from start
+  playing = !playing; lastTs = null; setPlayLabel();
+});
+document.getElementById("reset").addEventListener("click", () => {
+  tPlay = 0; playing = false; lastTs = null; setPlayLabel(); doneEl.textContent = "";
+});
+document.getElementById("clear").addEventListener("click", () => { preset="clear"; clearRoad(); invalidate(); });
+document.getElementById("bump").addEventListener("click",  () => { preset="bump";  bumpPreset();  invalidate(); });
+document.getElementById("classc").addEventListener("click", () => { preset="classc"; classCPreset(seedC); invalidate(); });
+document.getElementById("seed").addEventListener("change", (e) => {
+  seedC = Number(e.target.value) || 0;
+  if (preset === "classc") { classCPreset(seedC); invalidate(); }   // only regenerate if Class C is showing
+});
+document.getElementById("res").addEventListener("click",   () => { preset="res";   resonancePreset(); invalidate(); });
+
+velEl.addEventListener("input", () => {
+  velvEl.textContent = vel() + " m/s";
+  if (preset === "res") resonancePreset();   // retune: lambda depends on v
+  invalidate();
+});
+
+cskyEl.addEventListener("input", () => {
+  const c = cSky();
+  cskyvEl.textContent = c + " N s/m";
+  zsEl.textContent = fmt(c / C_C, 3);                  // skyhook's share
+  zeEl.textContent = fmt((P.b + c) / C_C, 3);          // total at resonance
+  regain();                                            // only the skyhook run is stale
+});
+
+/* --------------------------- boot ------------------------------- */
+bumpPreset();                  // start with something worth watching
+fitCanvases();
+setPlayLabel();
+cskyEl.dispatchEvent(new Event("input"));
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

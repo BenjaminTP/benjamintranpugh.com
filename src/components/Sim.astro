@@ -1,0 +1,52 @@
+---
+/**
+ * Embeds a self-contained interactive page from public/sims/ in a framed
+ * panel, with a link to open it full-screen. The embedded file carries its
+ * own styling, so keep the frame plain and let it sit inside the border.
+ *
+ *   <Sim src="/sims/active-suspension.html" title="QUARTER-CAR PLAYGROUND" />
+ */
+interface Props {
+  src: string;
+  title: string;
+  height?: string;
+}
+const { src, title, height = '1000px' } = Astro.props;
+---
+<div class="sim" style={`--sim-h: ${height}`}>
+  <div class="bar">
+    <span class="mono-label name">{title}</span>
+    <a class="mono-label open" href={src} target="_blank" rel="noopener">OPEN FULL SCREEN ↗</a>
+  </div>
+  <iframe src={src} title={title} loading="lazy"></iframe>
+</div>
+
+<style>
+  .sim {
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    clear: both;
+    margin: 1.4rem 0;
+  }
+  .bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    border-bottom: 1px solid var(--line);
+    padding: 0.6rem 0.7rem;
+  }
+  .name { color: var(--muted); }
+  .open { color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .open:hover { text-decoration: underline; }
+  iframe {
+    display: block;
+    width: 100%;
+    height: var(--sim-h);
+    border: 0;
+  }
+  /* the embedded controls wrap into more rows as the frame narrows */
+  @media (max-width: 640px) {
+    iframe { height: 1180px; }
+  }
+</style>

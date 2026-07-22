@@ -15,7 +15,7 @@ const pages = fs.existsSync(pub)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   : [];
 ---
-<Base title="Resume — Benjamin Tran-Pugh">
+<Base title="Resume | Benjamin Tran-Pugh">
   <main class="wrap">
     <header class="head">
       <h1 class="display">Resume</h1>
@@ -38,7 +38,7 @@ const pages = fs.existsSync(pub)
           ))}
         </div>
       ) : (
-        <p class="pending mono-label">RESUME PENDING — drop resume.pdf into public/</p>
+        <p class="pending mono-label">RESUME PENDING: drop resume.pdf into public/</p>
       )
     }
   </main>

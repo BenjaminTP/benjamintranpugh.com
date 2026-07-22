@@ -1,0 +1,29 @@
+---
+/**
+ * Side-by-side pair for before/after evidence. Wrap exactly two <Figure>
+ * elements; they sit in equal columns and stack on narrow screens.
+ *
+ *   <Compare>
+ *     <Figure src="slug/before.png" caption="PASSIVE" />
+ *     <Figure src="slug/after.png"  caption="SKYHOOK" />
+ *   </Compare>
+ */
+---
+<div class="compare">
+  <slot />
+</div>
+
+<style>
+  .compare {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    clear: both;
+    margin: 1.4rem 0;
+  }
+  /* the child <Figure> elements bring their own margins, so drop them here */
+  .compare :global(.fig) { margin: 0; width: 100%; float: none; }
+  @media (max-width: 640px) {
+    .compare { grid-template-columns: 1fr; }
+  }
+</style>

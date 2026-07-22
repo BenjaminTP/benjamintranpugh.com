@@ -1,5 +1,5 @@
 /* ============================================================
-   GLOBAL STYLES — fonts, base elements, shared utility classes.
+   GLOBAL STYLES: fonts, base elements, shared utility classes.
    Design values come from tokens.css; do not hardcode them here.
    Page-specific layout lives scoped inside each .astro file.
    ============================================================ */
@@ -67,7 +67,7 @@ h1, h2, h3, h4 { line-height: 1.15; margin: 0; }
   padding-right: var(--pad);
 }
 
-/* Anton display type — big headline moments */
+/* Anton display type: big headline moments */
 .display {
   font-family: var(--font-display);
   font-weight: 400;
@@ -76,7 +76,7 @@ h1, h2, h3, h4 { line-height: 1.15; margin: 0; }
   line-height: 0.94;
 }
 
-/* small monospace label — nav, telemetry, captions, tags */
+/* small monospace label: nav, telemetry, captions, tags */
 .mono-label {
   font-family: var(--font-mono);
   font-weight: 500;
@@ -102,7 +102,7 @@ h1, h2, h3, h4 { line-height: 1.15; margin: 0; }
 .btn.solid { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 .btn.solid:hover, .btn.solid:focus-visible { background: transparent; color: var(--accent); }
 
-/* hatched placeholder — shown wherever an image is missing */
+/* hatched placeholder: shown wherever an image is missing */
 .ph {
   border: 1px solid var(--line);
   background: repeating-linear-gradient(
@@ -153,9 +153,81 @@ h1, h2, h3, h4 { line-height: 1.15; margin: 0; }
   padding: 0.1em 0.35em;
 }
 
+/* code / equation blocks: monochrome, so amber stays the only accent */
+.prose pre {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  padding: 0.9rem 1rem;
+  margin: 1.4rem 0;
+  overflow-x: auto;
+  clear: both;
+}
+.prose pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 0.78rem;
+  line-height: 1.75;
+  color: var(--ink);
+}
+
+/* typeset math (MathJax SVG, rendered at build time).
+   Display equations sit in the same framed block as code so the page keeps
+   one visual rhythm; inline math just picks up the surrounding text color. */
+.prose mjx-container { color: var(--ink); }
+/* MathJax injects its own stylesheet into the body, so it lands after this
+   file and wins any specificity tie. Matching [jax] too outranks its
+   `text-align:center; margin:1em 0` default instead of relying on order. */
+.prose mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
+  padding: 1.1rem 1.2rem;
+  margin: 1.4rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: left;
+  clear: both;
+}
+.prose mjx-container[jax="SVG"][display="true"] > svg { margin: 0; }
+
+/* data tables: hairlines only, mono figures */
+.prose table {
+  /* block + max-content lets wide tables scroll themselves instead of
+     forcing the page to scroll sideways on a phone */
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 1.4rem 0;
+  font-size: 0.8rem;
+  clear: both;
+}
+.prose th, .prose td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 0.7rem 0.5rem 0;
+  text-align: left;
+  vertical-align: top;
+}
+.prose th {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.prose td { color: var(--muted); }
+.prose td:first-child { color: var(--ink); }
+.prose tbody td:not(:first-child) { font-family: var(--font-mono); font-size: 0.75rem; }
+
 /* figures placed by <Figure/> in project bodies */
 .fig { margin: 1.4rem 0; }
-.fig img { border: 1px solid var(--line); width: 100%; }
+.fig img, .fig video { border: 1px solid var(--line); width: 100%; display: block; background: var(--panel-2); }
 .fig figcaption {
   font-family: var(--font-mono);
   font-size: 0.62rem;

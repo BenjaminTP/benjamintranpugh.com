@@ -1,6 +1,6 @@
 ---
 title: Double Pendulum
-order: 2
+order: 3
 featured: true
 summary: Deriving the equations of motion from the Euler–Lagrange equation and simulating chaos in Python.
 telemetry: "EOM:LAGRANGE | SOLVER:NUMERIC"
@@ -17,7 +17,7 @@ The double pendulum is one of the simplest systems that produces chaos. I derive
 
 This plot maps every starting position of both pendulums against how long it takes the second pendulum to flip over. The result is a fractal, a signature of chaos. The black region marks starting positions without enough energy for the second pendulum to ever flip.
 
-<Figure src="double-pendulum/fractal.png" caption="TIME-TO-FLIP ACROSS INITIAL CONDITIONS — FRACTAL STRUCTURE" />
+<Figure src="double-pendulum/fractal.png" caption="TIME-TO-FLIP ACROSS INITIAL CONDITIONS / FRACTAL STRUCTURE" />
 
 ## Sensitivity to initial conditions
 
@@ -25,7 +25,7 @@ I ran 200 simulations with initial angles varying by one **billionth of a radian
 
 To put into perspective how small 1e-9 rad is, if you shined two lasers at the moon seperated by 1e-9 rad, the distance between them would be just over a foot.
 
-<Figure src="double-pendulum/variations-plot.png" caption="200 RUNS, Δθ₀ = 1e-9 RAD — DIVERGENCE OVER TIME" />
+<Figure src="double-pendulum/variations-plot.png" caption="200 RUNS, Δθ₀ = 1e-9 RAD / DIVERGENCE OVER TIME" />
 
 ## Method
 

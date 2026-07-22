@@ -1,17 +1,17 @@
 /* ============================================================
-   DESIGN TOKENS — the single source of truth for all visuals.
+   DESIGN TOKENS: the single source of truth for all visuals.
    Change a value here and it changes everywhere.
    Never hardcode colors, fonts, or spacing in components.
    ============================================================ */
 :root {
   /* color */
-  --bg: #131519;            /* page ground — deep charcoal */
+  --bg: #131519;            /* page ground, deep charcoal */
   --panel: #1a1d23;         /* cards, raised surfaces */
   --panel-2: #16181d;       /* subtle inset surfaces */
   --line: #2a2e36;          /* borders, hairlines */
   --ink: #e9e8e3;           /* primary text */
   --muted: #9a9da4;         /* secondary text */
-  --accent: #f2a33c;        /* amber — the only accent color */
+  --accent: #f2a33c;        /* amber, the only accent color */
 
   /* background grid */
   --grid-line: rgba(255, 255, 255, 0.035);
