@@ -5,5 +5,11 @@ graphify-out/
 .DS_Store
 media-originals/
 
+# dev/meta files, kept local but not published to the public repo
+.claude/
+CLAUDE.md
+EDITING.md
+README.md
+
 # generated resume preview (built from public/resume.pdf)
 resume-page-*.png
