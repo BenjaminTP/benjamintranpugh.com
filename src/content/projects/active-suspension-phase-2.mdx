@@ -1,0 +1,75 @@
+---
+title: "Active Suspension: Phase 2"
+order: 0.5
+featured: true
+summary: Building the phase 1 model into a physical rig. Friction and motor cogging overdamped the system, so skyhook could not run, but the build taught me how to design around imperfect hardware.
+telemetry: "BUILT IT FOR REAL | OUTCOME: OVERDAMPED"
+tags: [SolidWorks, 3D Printing, Direct-Drive Motor, IMU, Hardware, Aug 2026]
+cover: active-suspension-phase-2/hero.mp4
+github: https://github.com/BenjaminTP/Active_Suspension_Project
+writeup: https://github.com/BenjaminTP/Active_Suspension_Project/blob/main/Phase_2_Writeup.md
+---
+
+## Overview
+
+Phase 1 proved skyhook control in simulation. Phase 2 was meant to build that quarter-car model in hardware and run the controller for real. I built the rig. The controller never ran: friction and motor cogging overdamped the system, and skyhook is undefined on an already-overdamped plant. This page is the honest version of that, because the build is where I learned the most.
+
+The plan was six steps: spec a BOM, test the parts, CAD the rig, port the phase 1 math to a real controller, run it on generated roads, and compare against the sim. I got through the rig. The physics of a small rig stopped me at the controller.
+
+## The build
+
+I needed every element of the phase 1 model as a physical part, constrained to move only vertically on linear rails. The piece with no obvious answer was the road: I turned a servo through a crank and pushrod to convert rotation into vertical travel, and used the same trick for the skyhook actuator.
+
+The actuator drove the parts list. Skyhook needs a motor that is fully back-driveable with torque control, which rules out anything geared and leaves direct drive or quasi-direct drive. I took the cheaper direct-drive path with a Damiao DM-H6215: 1 Nm nominal, 2 Nm stall, torque control, and $59. The rest was deliberately cheap: an RC buggy wheel, an RC coilover for the passive spring and damper, an MPU6050 for body acceleration, and a bin of scrap metal for the body mass.
+
+<Figure src="active-suspension-phase-2/spring-stiffness.png" align="right" caption="SPRING 2 FORCE VS DISPLACEMENT / k2 = 0.472 N/MM, R² = 0.993" />
+
+Then reality set the parameters instead of me. Of the locked values from phase 1, only $k_2$ was measurable: the tire deflection was smaller than my calipers could read, and the coilover's spring and damper were factory-assembled so $b$ could not be isolated. I measured $k_2$ by loading the spring on a scale in 2.5 mm steps until it bottomed out, five reads per point. That gave $k_2 = 0.472$ N/mm with a 7.12 N preload, 19.6 mm of travel, and $R^2 = 0.993$. Everything else I planned to back out from the assembled rig rather than from bad standalone measurements.
+
+## Sizing it in CAD
+
+Two numbers had to be right before modelling: the two moment arms that convert motor rotation into force.
+
+Scaling a real bump down to this rig, a 3" bump on a 25" tire maps to about 8 mm on the 66 mm wheel, which fits inside the 19.6 mm of suspension travel. So the road crank needed a **4 mm** arm for 8 mm of total throw.
+
+The actuator arm came from peak force. Using the phase 1 result that peak body velocity is $\dot{x}_2 = A\omega$, a worst-case 5 Hz resonance and 4 mm amplitude give:
+
+$$
+\dot{x}_2 = A\omega = (0.004)(10\pi) = 0.126\ \mathrm{m/s}
+$$
+
+With upper-bound parameters ($k_1 = 10$, $k_2 = 0.5$ N/mm, $m_2 = 600$ g, $\zeta_{\text{eff}} = 0.8$), the skyhook coefficient and peak force come out small:
+
+$$
+c_{\text{sky}} = 1.6\sqrt{\frac{k_1 k_2 m_2}{k_1+k_2}} = 27\ \mathrm{N\,s/m},
+\qquad
+F_{\text{peak}} = c_{\text{sky}}\,\dot{x}_2 = 3.4\ \mathrm{N}
+$$
+
+Against the motor's 2 Nm stall that allows an arm up to 588 mm, which is absurdly long. The real limit was not torque but cogging: a longer arm multiplies the motor's cogging torque through the whole system, so I chose the shortest practical arm, 50 mm. That choice is exactly what came back to bite me.
+
+<Figure src="active-suspension-phase-2/cad-render.png" caption="FINAL RIG / MODELLED IN SOLIDWORKS" />
+
+## The turn
+
+I printed the parts, wired the electronics, sized the body mass to sit at mid-travel ($m_2 = 1.2$ kg), and assembled it.
+
+<Figure src="active-suspension-phase-2/built-rig.png" align="right" caption="THE ASSEMBLED RIG" />
+
+Then I measured the sag from the top of the travel versus the bottom and got a 1.5 to 2 mm band. That gap is friction, and it was large. Removing the actuator collapsed the band to about 5 mm of clean travel, which located the culprit: the motor's cogging torque, multiplied along that 50 mm arm, was fighting the suspension the whole way.
+
+On a rig this small, those friction and cogging forces land on the same order as the suspension forces themselves. That overdamps the system, and skyhook has nothing to do on an overdamped plant (phase 1 covers why). A drop test, a hold-and-release, and a 3 Hz road all showed textbook overdamped behavior: the body eases back to rest with no overshoot, no oscillation for the controller to cancel.
+
+Actuator off in all three, showing the passive rig moving:
+
+<Compare cols={3}>
+  <Figure src="active-suspension-phase-2/rig-3hz-road.mp4" autoplay caption="3 HZ ROAD / SERVO-DRIVEN CRANK" />
+  <Figure src="active-suspension-phase-2/rig-drop-test.mp4" autoplay caption="DROP TEST" />
+  <Figure src="active-suspension-phase-2/rig-pushdown-pullup.mp4" autoplay caption="PUSH DOWN AND PULL UP" />
+</Compare>
+
+## What I would change
+
+The fix is scale. A physically larger rig pushes the suspension forces well above the fixed friction and cogging, so they stop dominating. Failing that, a lower-cogging actuator and smoother linear and ball bearings would buy back the same margin at this size. Both cost more than a first physical prototype was worth.
+
+I did not get skyhook running on hardware, and I am not going to pretend otherwise. What I got was the part that does not show up in a simulation: where the model quietly assumes an ideal, and how to design around hardware that refuses to be ideal. The full parts list, measurements, and derivations are in the [Phase 2 writeup](https://github.com/BenjaminTP/Active_Suspension_Project/blob/main/Phase_2_Writeup.md).
