@@ -627,8 +627,12 @@ const first = sheets[0];
     border-left: none;
     background: var(--well);
     padding: 0;
+    transform: translateX(var(--pull, 0px));
     transition: transform 0.32s var(--spring-tab);
   }
+  /* while a wheel gesture is building, the tab tracks the finger instead of
+     springing, so the pull reads as direct manipulation */
+  .tabs.tracking .tab { transition: transform 0.1s linear; }
   .tab .nm {
     writing-mode: vertical-rl;
     font-family: var(--font-mono);
@@ -669,17 +673,23 @@ const first = sheets[0];
     opacity: 0;
     transition: opacity 0.25s ease;
   }
-  .tab[aria-selected='true'] { transform: translateX(7px); }
+  .tab[aria-selected='true'] { transform: translateX(calc(7px + var(--pull, 0px))); }
   .tab[aria-selected='true'] .nm { opacity: 1; }
   .tab[aria-selected='true'] .n { color: var(--red); border-color: var(--red); }
   .tab[aria-selected='true'] .bar { opacity: 1; }
 
   /* ================= mobile ================= */
   @media (max-width: 768px) {
-    .desk { padding: 0; }
+    .desk { padding: 0; overflow-x: hidden; }
     /* flex so the tab strip can hop above the sheet with order */
     .rig { width: 100%; display: flex; flex-direction: column; }
     .sheet-wrap { min-width: 0; }
+    /* a horizontal swipe pages the stack: the incoming sheet slides in from
+       the side it was swiped from, like the next frame of a reel */
+    .sheet-wrap.reel { animation: reel 0.34s var(--ease-open); }
+    @keyframes reel {
+      from { transform: translateX(var(--from, 26%)); opacity: 0.35; }
+    }
     /* desktop stacks media over the cell and hides the caption until hover;
        on a phone the card flows normally and the caption is always visible */
     .cell .well { position: relative; inset: auto; min-height: 0; }
@@ -770,6 +780,7 @@ const first = sheets[0];
 
   @media (prefers-reduced-motion: reduce) {
     .tab, .cell, .list, .swap, .cell .psg, .cell .plus { transition: none; }
+    .sheet-wrap.reel { animation: none; }
   }
 </style>
 
@@ -778,7 +789,10 @@ const first = sheets[0];
   const sheets = [...rig.querySelectorAll<HTMLElement>('.sheet-wrap')];
   const tabs = [...rig.querySelectorAll<HTMLButtonElement>('.tab')];
 
+  let cur = 0;
+
   function select(i: number, focus = false) {
+    cur = i;
     sheets.forEach((s, k) => (s.hidden = k !== i));
     tabs.forEach((t, k) => {
       const on = k === i;
@@ -843,4 +857,78 @@ const first = sheets[0];
       });
     }
   }
+
+  // Desktop: a vertical wheel walks the stack. The neighbouring tab slides out
+  // of the strip as the gesture builds, then keeps going when it commits.
+  const strip = rig.querySelector<HTMLElement>('.tabs')!;
+  const splash = document.querySelector<HTMLInputElement>('#splash-dismiss');
+  // the title sheet covers the index until it is dismissed: no paging behind it
+  const covered = () => !!splash && !splash.checked;
+  const STEP = 160; // about two mouse notches, or a short trackpad flick
+  let acc = 0;
+  let quiet = 0;
+  let idle: number;
+
+  function clearPull() {
+    strip.classList.remove('tracking');
+    for (const t of tabs) t.style.removeProperty('--pull');
+    acc = 0;
+  }
+
+  window.addEventListener(
+    'wheel',
+    (e) => {
+      if (!fine.matches || covered() || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      // trackpad momentum keeps firing after a switch: ignore it for a beat
+      if (performance.now() < quiet) return;
+      const dir = e.deltaY > 0 ? 1 : -1;
+      const next = cur + dir;
+      if (next < 0 || next >= tabs.length) return;
+      if (acc && Math.sign(acc) !== dir) clearPull();
+      acc += e.deltaY;
+      clearTimeout(idle);
+      idle = window.setTimeout(clearPull, 400);
+      if (Math.abs(acc) >= STEP) {
+        quiet = performance.now() + 420;
+        clearTimeout(idle);
+        clearPull();
+        select(next);
+        return;
+      }
+      strip.classList.add('tracking');
+      tabs[next].style.setProperty('--pull', `${(Math.abs(acc) / STEP) * 9}px`);
+    },
+    { passive: true },
+  );
+
+  // Phone: swipe sideways to page the stack like a photo reel.
+  let x0 = 0;
+  let y0 = 0;
+  window.addEventListener(
+    'touchstart',
+    (e) => {
+      x0 = e.touches[0].clientX;
+      y0 = e.touches[0].clientY;
+    },
+    { passive: true },
+  );
+  window.addEventListener(
+    'touchend',
+    (e) => {
+      const dx = e.changedTouches[0].clientX - x0;
+      const dy = e.changedTouches[0].clientY - y0;
+      if (covered() || Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      const next = cur + (dx < 0 ? 1 : -1);
+      if (next < 0 || next >= sheets.length) return;
+      const el = sheets[next];
+      el.style.setProperty('--from', dx < 0 ? '26%' : '-26%');
+      select(next);
+      el.classList.remove('reel');
+      void el.offsetWidth; // restart the slide on every swipe
+      el.classList.add('reel');
+      tabs[next].scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+      window.scrollTo({ top: 0 });
+    },
+    { passive: true },
+  );
 </script>
