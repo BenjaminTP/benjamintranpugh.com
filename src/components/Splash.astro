@@ -1,17 +1,13 @@
 ---
 /**
- * Title sheet. Covers the index on load, holds for 2s, then peels away from
- * the right edge like a page being turned off the drawing underneath.
- * Clicking it peels immediately.
+ * Title sheet. Covers the index until the visitor clicks or taps it, then
+ * peels away from the right edge like a page turned off the drawing beneath.
  *
- * The automatic peel is a pure CSS animation with `forwards`, so it clears
- * itself with no JavaScript: if scripting is off or a script fails, the sheet
- * still leaves and the index is never stranded behind it. The click path
- * swaps the animation for a transition to the same end state, which restarts
- * cleanly from wherever the hold had got to.
- *
- * aria-hidden throughout: it is decoration, and the index below it is fully
- * available to assistive tech from the first paint.
+ * There is no timer: it waits. That makes dismissing it the only way through,
+ * so it must not depend on JavaScript to get out of the way. A hidden checkbox
+ * does the work and the whole sheet is its <label>, so the peel is pure CSS
+ * and cannot be broken by a script failing to load. The checkbox is focusable,
+ * so it is also the first thing Tab reaches and Space dismisses it.
  */
 import Frame from './Frame.astro';
 
@@ -28,42 +24,63 @@ const cells = [
   ['PROJECTION', 'THIRD ANGLE'],
 ];
 ---
-<div class="splash" aria-hidden="true">
+<input
+  class="key"
+  type="checkbox"
+  id="splash-dismiss"
+  aria-label="Dismiss the title sheet and view the drawings"
+/>
+<label class="splash" for="splash-dismiss">
   <div class="stage">
     <div class="sag">
-    <Frame zones={4} fixed>
-      <div class="plate">
-        <div class="measured">
-          <h1>Benjamin Tran&#8209;Pugh</h1>
-          {/* the subtitle is set as a dimension across the width of the name */}
-          <div class="dim">
-            <span class="ext l"></span>
-            <span class="ext r"></span>
-            <span class="rule"></span>
-            <span class="arrow l"></span>
-            <span class="arrow r"></span>
-            <span class="cap">Project Portfolio</span>
+      <Frame zones={4} fixed>
+        <div class="plate" aria-hidden="true">
+          <div class="measured">
+            <h1>Benjamin Tran&#8209;Pugh</h1>
+            {/* the subtitle is set as a dimension across the width of the name */}
+            <div class="dim">
+              <span class="ext l"></span>
+              <span class="ext r"></span>
+              <span class="rule"></span>
+              <span class="arrow l"></span>
+              <span class="arrow r"></span>
+              <span class="cap">Project Portfolio</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="tblock">
-        {
-          cells.map(([k, v]) => (
-            <div class="cell">
-              <span class="k">{k}</span>
-              <span class="v">{v}</span>
-            </div>
-          ))
-        }
-        <div class="tol">DIMENSIONS IN MM / TOLERANCES ±0.5 UNLESS NOTED / DO NOT SCALE DRAWING</div>
-      </div>
-    </Frame>
+        <div class="tblock" aria-hidden="true">
+          {
+            cells.map(([k, v]) => (
+              <div class="cell">
+                <span class="k">{k}</span>
+                <span class="v">{v}</span>
+              </div>
+            ))
+          }
+          <div class="tol">DIMENSIONS IN MM / TOLERANCES ±0.5 UNLESS NOTED / DO NOT SCALE DRAWING</div>
+          <div class="hint">
+            <span class="pointer">Click to continue</span>
+            <span class="touch">Tap to continue</span>
+          </div>
+        </div>
+      </Frame>
     </div>
   </div>
-</div>
+</label>
 
 <style>
+  /* invisible but focusable, so the sheet is keyboard-dismissable */
+  .key {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    z-index: 51;
+  }
   .splash {
     position: fixed;
     inset: 0;
@@ -76,7 +93,6 @@ const cells = [
     cursor: pointer;
     perspective: 2000px;
     perspective-origin: 30% 50%;
-    animation: splash-fade 0.85s cubic-bezier(0.55, 0, 0.85, 0.4) 2s forwards;
   }
   .stage {
     width: min(var(--sheet-w), 100% - var(--tab-w) - 12px);
@@ -85,17 +101,39 @@ const cells = [
        travels right to left across the sheet */
     transform-origin: 0% 50%;
     transform-style: preserve-3d;
-    animation: peel-swing 1.15s cubic-bezier(0.5, 0, 0.72, 0.45) 2s forwards;
   }
-  /* Paper is not a rigid plane. The sheet sits in its own layer and runs the
-     same duration on a laggier curve, so it trails the swing and droops under
-     its own weight instead of turning like a hinged board. */
+  /* Paper is not a rigid plane. The sheet sits in its own layer on a laggier
+     curve, so it trails the swing and droops under its own weight instead of
+     turning like a hinged board. */
   .sag {
     height: 100%;
     transform-origin: 0% 45%;
-    animation: peel-sag 1.15s cubic-bezier(0.25, 0.55, 0.35, 1) 2s forwards;
   }
-  .sag :global(.sheet) { height: 100%; }
+  .sag :global(.sheet) { height: 100%; display: flex; flex-direction: column; }
+  .sag :global(.content) { flex: 1; min-height: 0; }
+
+  /* ---- the peel, on dismiss ---- */
+  .key:checked + .splash {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.8s cubic-bezier(0.55, 0, 0.85, 0.4) 0.35s,
+      visibility 0s linear 1.15s;
+  }
+  .key:checked + .splash .stage {
+    transform: rotateY(-86deg) translate3d(-138%, 11%, 0);
+    transition: transform 1.15s cubic-bezier(0.5, 0, 0.72, 0.45);
+  }
+  .key:checked + .splash .sag {
+    transform: rotateZ(11deg) skewY(5.2deg);
+    transition: transform 1.15s cubic-bezier(0.25, 0.55, 0.35, 1);
+  }
+  /* the prompt is the affordance, so it carries the visible focus ring */
+  .key:focus-visible + .splash .hint {
+    outline: 2px solid var(--red);
+    outline-offset: -4px;
+  }
 
   /* ---- name and its dimension ---- */
   .plate {
@@ -213,58 +251,62 @@ const cells = [
     color: var(--label);
     white-space: nowrap;
   }
-
-  @keyframes splash-fade {
-    0%, 68% { opacity: 1; }
-    100% { opacity: 0; visibility: hidden; }
+  /* the only way past the sheet, so it is the loudest thing after the name */
+  .hint {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    animation: hint-pulse 1.8s ease-in-out infinite;
   }
-  @keyframes peel-swing {
-    0% { transform: rotateY(0deg) translate3d(0, 0, 0); }
-    28% { transform: rotateY(-24deg) translate3d(-2%, 1%, 0); }
-    100% { transform: rotateY(-86deg) translate3d(-138%, 11%, 0); }
+  .hint .touch { display: none; }
+  /* a touch device gets "tap", a pointer gets "click": one phrase each */
+  @media (hover: none) {
+    .hint .pointer { display: none; }
+    .hint .touch { display: inline; }
   }
-  @keyframes peel-sag {
-    0% { transform: rotateZ(0deg) skewY(0deg); }
-    28% { transform: rotateZ(1.6deg) skewY(1.3deg); }
-    64% { transform: rotateZ(5.4deg) skewY(3.1deg); }
-    100% { transform: rotateZ(11deg) skewY(5.2deg); }
-  }
-
-  /* click to dismiss: drop the animation and transition to the same end state */
-  .splash.go {
-    animation: none;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.6s cubic-bezier(0.55, 0, 0.85, 0.4),
-      visibility 0.6s step-end;
-  }
-  .splash.go .stage {
-    animation: none;
-    transform: rotateY(-86deg) translate3d(-138%, 11%, 0);
-    transition: transform 0.8s cubic-bezier(0.5, 0, 0.72, 0.45);
-  }
-  .splash.go .sag {
-    animation: none;
-    transform: rotateZ(11deg) skewY(5.2deg);
-    transition: transform 0.8s cubic-bezier(0.25, 0.55, 0.35, 1);
+  @keyframes hint-pulse {
+    50% { opacity: 0.5; }
   }
 
-  /* no hold, no peel: get out of the way at once */
+  /* no peel, no pulse: leave at once */
   @media (prefers-reduced-motion: reduce) {
-    .splash { animation: splash-fade 0.2s linear 0.6s forwards; }
-    .stage, .sag { animation: none; }
-    .splash.go, .splash.go .stage, .splash.go .sag { transition: none; }
+    .hint { animation: none; }
+    .key:checked + .splash,
+    .key:checked + .splash .stage,
+    .key:checked + .splash .sag { transition: none; }
   }
 
   @media (max-width: 768px) {
     .splash { padding: 0; }
     .stage { width: 100%; height: 100%; }
-    h1 { font-size: clamp(2rem, 10vw, 3.2rem); }
-    .tblock { width: 100%; }
+    /* Frame drops its fixed positioning here, so .plate has no parent height
+       to fill. Let the name take the slack and the title block flow under it
+       rather than float over the whole sheet. */
+    .plate { padding: 20px 16px; }
+    h1 { white-space: normal; font-size: clamp(2.1rem, 11.5vw, 3.4rem); }
+    .measured { max-width: 100%; }
+    .cap { letter-spacing: 0.22em; text-indent: 0.22em; padding: 0 9px; }
+    .tblock {
+      position: static;
+      width: auto;
+      border-left: 0;
+    }
+    .k { font-size: 7px; }
+    .v { font-size: 9.5px; }
+  }
+
+  /* Not enough height for both: the name and the prompt win, the data goes. */
+  @media (max-width: 768px) and (max-height: 720px) {
+    .cell, .tol { display: none; }
   }
 </style>
-
-<script>
-  const splash = document.querySelector<HTMLElement>('.splash');
-  splash?.addEventListener('click', () => splash.classList.add('go'), { once: true });
-</script>
