@@ -1,11 +1,11 @@
 ---
 /**
  * Title sheet. Covers the index until the visitor clicks or taps it, then
- * peels away from the right edge like a page turned off the drawing beneath.
+ * sweeps off to the left like a sheet pulled off the drawing beneath.
  *
  * There is no timer: it waits. That makes dismissing it the only way through,
  * so it must not depend on JavaScript to get out of the way. A hidden checkbox
- * does the work and the whole sheet is its <label>, so the peel is pure CSS
+ * does the work and the whole sheet is its <label>, so the sweep is pure CSS
  * and cannot be broken by a script failing to load. The checkbox is focusable,
  * so it is also the first thing Tab reaches and Space dismisses it.
  */
@@ -92,42 +92,89 @@ const cells = [
     background: var(--desk);
     cursor: pointer;
     perspective: 2000px;
-    perspective-origin: 30% 50%;
+    perspective-origin: 50% 50%;
+    /* the sheet travels well past the left edge: never let that be scrollable */
+    overflow: hidden;
   }
   .stage {
     width: min(var(--sheet-w), 100% - var(--tab-w) - 12px);
     height: min(var(--sheet-h), calc(100vh - 44px));
-    /* hinged at the left edge, so the right edge lifts first and the peel
-       travels right to left across the sheet */
-    transform-origin: 0% 50%;
+    transform-origin: 50% 50%;
     transform-style: preserve-3d;
   }
   /* Paper is not a rigid plane. The sheet sits in its own layer on a laggier
-     curve, so it trails the swing and droops under its own weight instead of
-     turning like a hinged board. */
+     curve, so it lags its own leading edge and skews into the pull instead of
+     sliding like a rigid board. */
   .sag {
     height: 100%;
-    transform-origin: 0% 45%;
+    transform-origin: 50% 50%;
   }
   .sag :global(.sheet) { height: 100%; display: flex; flex-direction: column; }
   .sag :global(.content) { flex: 1; min-height: 0; }
 
-  /* ---- the peel, on dismiss ---- */
+  /* ---- the sweep, on dismiss ---- */
+  @keyframes splash-sweep {
+    0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+    14%  { transform: translate3d(1.6%, -2.4%, 72px) rotate(1.9deg); }
+    100% { transform: translate3d(-136%, 10%, 0) rotate(-9deg); }
+  }
+
+  /* the sheet lagging its own leading edge, plus the shadow it picks up
+     as it lifts off the stack */
+  @keyframes splash-flex {
+    0% {
+      transform: skewY(0deg) skewX(0deg) scale(1);
+      box-shadow: 0 1px 3px rgba(18, 50, 94, 0.10);
+    }
+    16% {
+      transform: skewY(1.7deg) skewX(-1.3deg) scale(1.014);
+      box-shadow: 0 20px 44px rgba(18, 50, 94, 0.30);
+    }
+    48% {
+      transform: skewY(-2.6deg) skewX(2.8deg) scaleY(0.984);
+    }
+    100% {
+      transform: skewY(-0.7deg) skewX(1.1deg) scale(1);
+      box-shadow: 0 30px 66px rgba(18, 50, 94, 0.14);
+    }
+  }
+
+  /* phone: the sheet is the whole screen, so a 9deg rotation swings the
+     trailing corner back across the drawing. Shorter throw, smaller angle. */
+  @keyframes splash-sweep-sm {
+    0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+    16%  { transform: translate3d(1.4%, -1.8%, 60px) rotate(1.4deg); }
+    100% { transform: translate3d(-128%, 12%, 0) rotate(-7deg); }
+  }
+
   .key:checked + .splash {
-    opacity: 0;
-    visibility: hidden;
     pointer-events: none;
-    transition:
-      opacity 0.8s cubic-bezier(0.55, 0, 0.85, 0.4) 0.35s,
-      visibility 0s linear 1.15s;
+    /* the backdrop goes at once so the index is revealed by the sheet leaving,
+       not by a fade. Same colour as the desk beneath, so dropping it shows
+       nothing but the drawing the sheet uncovers. */
+    background: transparent;
+    /* no opacity change: the sheet must stay opaque the whole way out.
+       visibility flips only after the motion has finished. */
+    visibility: hidden;
+    transition: visibility 0s linear 1400ms;
   }
   .key:checked + .splash .stage {
-    transform: rotateY(-86deg) translate3d(-138%, 11%, 0);
-    transition: transform 1.15s cubic-bezier(0.5, 0, 0.72, 0.45);
+    animation: splash-sweep 1400ms cubic-bezier(0.36, 0, 0.15, 1) both;
   }
   .key:checked + .splash .sag {
-    transform: rotateZ(11deg) skewY(5.2deg);
-    transition: transform 1.15s cubic-bezier(0.25, 0.55, 0.35, 1);
+    animation: splash-flex 1400ms cubic-bezier(0.28, 0.15, 0.25, 1) both;
+  }
+  @media (max-width: 768px) {
+    .key:checked + .splash .stage { animation-name: splash-sweep-sm; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .key:checked + .splash {
+      visibility: hidden;
+      transition: none;
+    }
+    .key:checked + .splash .stage,
+    .key:checked + .splash .sag { animation: none; }
   }
   /* the prompt is the affordance, so it carries the visible focus ring */
   .key:focus-visible + .splash .hint {
@@ -278,12 +325,9 @@ const cells = [
     50% { opacity: 0.5; }
   }
 
-  /* no peel, no pulse: leave at once */
+  /* no pulse either, under reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .hint { animation: none; }
-    .key:checked + .splash,
-    .key:checked + .splash .stage,
-    .key:checked + .splash .sag { transition: none; }
   }
 
   @media (max-width: 768px) {
