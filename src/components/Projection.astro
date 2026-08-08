@@ -1,0 +1,48 @@
+---
+/** Third-angle projection symbol: truncated cone seen two ways. */
+interface Props { stacked?: boolean }
+const { stacked = false } = Astro.props;
+---
+<div class="proj" aria-hidden="true">
+  <span class="circle"></span>
+  <span class="cone"></span>
+  <span class="label" set:html={stacked ? 'THIRD ANGLE<br>PROJECTION' : 'THIRD ANGLE PROJECTION'} />
+</div>
+
+<style>
+  .proj { display: flex; align-items: center; gap: 11px; }
+  .circle {
+    position: relative;
+    width: 21px;
+    height: 21px;
+    border: 1.5px solid var(--ink);
+    border-radius: 50%;
+    flex: none;
+  }
+  .circle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    bottom: -4px;
+    width: 1.5px;
+    margin-left: -0.75px;
+    background: var(--ink);
+  }
+  .cone {
+    width: 25px;
+    height: 15px;
+    border: 1.5px solid var(--ink);
+    clip-path: polygon(0 0, 100% 18%, 100% 82%, 0 100%);
+    flex: none;
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 8.5px;
+    line-height: 1.45;
+    letter-spacing: 0.14em;
+    color: var(--label);
+    max-width: 96px;
+  }
+</style>

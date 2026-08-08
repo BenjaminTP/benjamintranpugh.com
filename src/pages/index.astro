@@ -1,109 +1,846 @@
 ---
 import { getCollection } from 'astro:content';
-import Base from '../layouts/Base.astro';
-import ProjectCard from '../components/ProjectCard.astro';
+import Sheet from '../layouts/Sheet.astro';
+import Frame from '../components/Frame.astro';
+import Media from '../components/Media.astro';
+import Stamp from '../components/Stamp.astro';
+import Projection from '../components/Projection.astro';
+import Lightbox from '../components/Lightbox.astro';
+import Splash from '../components/Splash.astro';
+import { figuresOf, notesOf, sheetOf, toolsAndDate } from '../lib/sheet';
 
-const projects = (await getCollection('projects')).sort(
-  (a, b) => a.data.order - b.data.order
-);
+const all = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 
-// structured data so search engines connect the site to Benjamin by name
-const personSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: 'Benjamin Tran-Pugh',
-  url: 'https://benjamintranpugh.com',
-  jobTitle: 'Mechanical Engineering Student',
-  affiliation: { '@type': 'CollegeOrUniversity', name: 'University of Waterloo' },
-  email: 'mailto:benjamintranpugh@gmail.com',
-  sameAs: [
-    'https://github.com/BenjaminTP',
-    'https://linkedin.com/in/benjamin-tran-pugh',
-  ],
-};
+// Everything each sheet needs, resolved at build time.
+const sheets = all.map((p, i) => {
+  const figs = figuresOf(p);
+  const n = figs.length;
+  // pack the grid so there is never a blank cell: the first figure
+  // stretches across whatever the last row would have left empty
+  const cols = n <= 2 ? Math.max(n, 1) : n <= 4 ? 2 : 3;
+  const span = cols - ((n - 1) % cols);
+  const { tools, date } = toolsAndDate(p.data.tags);
+  const id = sheetOf(i, all.length);
+  const secondary = p.data.writeup
+    ? { href: p.data.writeup, label: 'FULL REPORT ↗' }
+    : p.data.github
+      ? { href: p.data.github, label: 'SOURCE ↗' }
+      : p.data.related ?? { href: '/resume/', label: 'RESUME →' };
+  return {
+    p,
+    figs,
+    cols,
+    span,
+    tools,
+    date,
+    ...id,
+    secondary,
+    notes: notesOf(p),
+    href: `/projects/${p.id}/`,
+  };
+});
+
+const first = sheets[0];
 ---
-<Base title="Benjamin Tran-Pugh | Mechanical Engineering, University of Waterloo">
-  <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
-  <main>
-    <section class="hero wrap">
-      <div class="intro">
-        <p class="kicker mono-label">MECHANICAL ENGINEERING (2030) / UNIVERSITY OF WATERLOO</p>
-        <h1 class="display name">Benjamin<br />Tran&#8209;Pugh</h1>
-        <p class="readout mono-label">
-          FOCUS&nbsp;&nbsp;: ROBOTICS / AEROSPACE / AUTOMOTIVE<br />
-          CAD&nbsp;&nbsp;&nbsp;&nbsp;: SOLIDWORKS / ONSHAPE / INVENTOR / FUSION 360 / AUTOCAD<br />
-          SIM&nbsp;&nbsp;&nbsp;&nbsp;: FEA (SOLIDWORKS, ANSYS) / CAE / PYTHON + MATLAB MODELS<br />
-          CODE&nbsp;&nbsp;&nbsp;: PYTHON / C/C++ / MATLAB / ESP32 + ARDUINO<br />
-          STATUS : MECHANICAL ENGINEERING INTERN AT HUMAN COMPUTER LAB
-        </p>
-        <div class="cta">
-          <a class="btn solid" href="/resume/">RESUME</a>
-          <a class="btn" href="https://github.com/BenjaminTP">GITHUB ↗</a>
-          <a class="btn" href="https://linkedin.com/in/benjamin-tran-pugh">LINKEDIN ↗</a>
-        </div>
-      </div>
-      <a class="feature" href="/projects/robot-arm-2/">
-        <video src="/images/robot-arm-2/orbit.mp4" autoplay loop muted playsinline aria-label="Robot Arm 2.0, CAD orbit animation in SolidWorks"></video>
-        <span class="mono-label">ROBOT ARM 2.0 / CAD ORBIT / SOLIDWORKS</span>
-      </a>
-    </section>
 
-    <section id="work" class="wrap">
-      <div class="workhead">
-        <h2 class="mono-label">SELECTED WORK</h2>
-        <span class="mono-label count">{String(projects.length).padStart(2, '0')} PROJECTS</span>
+<Sheet
+  title="Benjamin Tran-Pugh | Mechanical Engineering, University of Waterloo"
+  description={`Mechanical engineering student at the University of Waterloo. ${first.p.data.summary}`}
+>
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: 'Benjamin Tran-Pugh',
+      url: 'https://benjamintranpugh.com',
+      jobTitle: 'Mechanical Engineering Student',
+      affiliation: { '@type': 'CollegeOrUniversity', name: 'University of Waterloo' },
+      email: 'mailto:benjamintranpugh@gmail.com',
+      sameAs: ['https://github.com/BenjaminTP', 'https://linkedin.com/in/benjamin-tran-pugh'],
+    })}
+  />
+
+  <Splash />
+
+  <main class="desk">
+    <div class="rig">
+      {
+        sheets.map((s, i) => (
+          <section class="sheet-wrap" data-sheet={i} hidden={i !== 0}>
+            <Frame zones={4} fixed>
+              {/* ---- header ---- */}
+              <div class="head">
+                <div class="head-l">
+                  <span class="code">{s.code}</span>
+                  <h1>{s.p.data.title}</h1>
+                </div>
+                <div class="head-r">
+                  <span class="spec">{s.p.data.telemetry}</span>
+                  <span class="date">{s.date}</span>
+                </div>
+              </div>
+
+              {/* ---- figure field + hero ---- */}
+              <div class="body">
+                <div class="field">
+                  <div class="field-head">
+                    <span>FIGURES IN PAGE ORDER</span>
+                    <span>01 → {String(s.figs.length).padStart(2, '0')}</span>
+                  </div>
+                  <div class="grid" style={`--cols:${s.cols}`}>
+                    {s.figs.map((f, j) => (
+                      <figure
+                        class="fig cell"
+                        data-fig={j}
+                        style={j === 0 && s.span > 1 ? `grid-column:span ${s.span}` : undefined}
+                        tabindex="0"
+                      >
+                        <div class="well" data-zoom={f.src} data-cap={f.caption}>
+                          <Media src={f.src} alt={f.caption} autoplay={false} mode="fit" />
+                          <span class="balloon" aria-hidden="true">
+                            <span>{String(j + 1).padStart(2, '0')}</span>
+                          </span>
+                          <figcaption>
+                            <span class="cap">{f.caption}</span>
+                            <span class="plus" aria-hidden="true">+</span>
+                          </figcaption>
+                        </div>
+                        <div class="psg" hidden>
+                          {f.passage?.kind === 'ul' ? (
+                            <ul>
+                              {f.passage.items.map((t) => (
+                                <li>{t}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            f.passage?.items.map((t) => <p>{t}</p>)
+                          )}
+                        </div>
+                      </figure>
+                    ))}
+                  </div>
+                </div>
+
+                <div class="hero-col">
+                  <div class="hero-head">
+                    <span>GENERAL VIEW</span>
+                    <span class="hot">HERO</span>
+                  </div>
+                  <div class="hero">
+                    <div class="well">
+                      <Media
+                        src={s.p.data.cover}
+                        alt={s.p.data.heroLabel}
+                        poster={s.p.data.heroPoster}
+                        mode="fit"
+                      />
+                      <span class="cm tl" aria-hidden="true"></span>
+                      <span class="cm tr" aria-hidden="true"></span>
+                      <span class="cm bl" aria-hidden="true"></span>
+                      <span class="cm br" aria-hidden="true"></span>
+                      <span class="datum" aria-hidden="true">
+                        <span class="tri"></span>
+                        <span class="box">A</span>
+                      </span>
+                      <span class="nts" aria-hidden="true">NTS</span>
+                    </div>
+                    <div class="hero-cap">{s.p.data.heroLabel}</div>
+                  </div>
+                  <div class="hero-foot">
+                    <Projection />
+                    <span class="spacer"></span>
+                    <Stamp sheet={s.stamp} />
+                  </div>
+                </div>
+              </div>
+
+              {/* ---- notes + title block ---- */}
+              <div class="strip">
+                <div class="notes">
+                  <div class="notes-head">
+                    <span>GENERAL NOTES / HOVER A FIGURE FOR ITS PASSAGE</span>
+                    <span class="tag"></span>
+                  </div>
+                  <div class="notes-body">
+                    <ol class="list">
+                      {s.notes.map((t) => (
+                        <li>
+                          <span class="t">{t}</span>
+                        </li>
+                      ))}
+                    </ol>
+                    <div class="swap" aria-live="polite">
+                      <div class="swap-label"></div>
+                      <div class="swap-text"></div>
+                    </div>
+                  </div>
+                  <div class="tools">
+                    <span class="mono">TOOLS</span>
+                    {s.tools.map((t) => (
+                      <span class="chip">{t}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div class="tblock">
+                  <div class="tb-row">
+                    <div class="tb-cell grow">
+                      <div class="mono">DRAWN BY</div>
+                      <div class="name">Benjamin Tran-Pugh</div>
+                      <div class="role">Mechanical engineering, University of Waterloo</div>
+                    </div>
+                    <div class="tb-cell narrow">
+                      <div class="mono">SHEET</div>
+                      <div class="big">{s.sheet}</div>
+                    </div>
+                  </div>
+                  <div class="tb-row grow">
+                    <div class="tb-cell grow links">
+                      <a href="mailto:benjamintranpugh@gmail.com">benjamintranpugh@gmail.com</a>
+                      <a href="mailto:btranpug@uwaterloo.ca">btranpug@uwaterloo.ca</a>
+                      <a href="https://github.com/BenjaminTP">github.com/BenjaminTP</a>
+                      <a href="https://linkedin.com/in/benjamin-tran-pugh">
+                        linkedin.com/in/benjamin&#8209;tran&#8209;pugh
+                      </a>
+                      <a href="/resume/">resume →</a>
+                    </div>
+                    <div class="tb-cell narrow split">
+                      <div>
+                        <div class="mono">DWG</div>
+                        <div class="sm">{s.code}</div>
+                      </div>
+                      <div>
+                        <div class="mono">FIGS</div>
+                        <div class="sm">{String(s.figs.length + 1).padStart(2, '0')}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="tol">
+                    DIMENSIONS IN MM / TOLERANCES ±0.5 UNLESS NOTED / DO NOT SCALE DRAWING
+                  </div>
+                  <div class="cta">
+                    <a class="primary" href={s.href}>
+                      <span>DETAILS</span>
+                      <span>→</span>
+                    </a>
+                    <a class="second" href={s.secondary.href}>{s.secondary.label}</a>
+                  </div>
+                </div>
+              </div>
+            </Frame>
+          </section>
+        ))
+      }
+
+      <Lightbox />
+
+      <div class="tabs" role="tablist" aria-label="Project sheets">
+        {
+          sheets.map((s, i) => (
+            <button
+              class="tab"
+              role="tab"
+              data-tab={i}
+              aria-selected={i === 0 ? 'true' : 'false'}
+              tabindex={i === 0 ? 0 : -1}
+            >
+              <span class="n" aria-hidden="true">{s.n}</span>
+              <span class="nm">{s.p.data.short}</span>
+              <span class="bar" aria-hidden="true"></span>
+            </button>
+          ))
+        }
       </div>
-      <div class="grid">
-        {projects.map((p) => <ProjectCard project={p} />)}
-      </div>
-    </section>
+    </div>
   </main>
-</Base>
+</Sheet>
 
 <style>
-  .hero {
-    display: grid;
-    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-    gap: clamp(1.5rem, 4vw, 3.5rem);
+  .desk {
+    min-height: 100vh;
+    display: flex;
     align-items: center;
-    padding-top: clamp(1.6rem, 4vw, 3.2rem);
-    padding-bottom: clamp(1.6rem, 4vw, 3.2rem);
+    justify-content: center;
+    padding: 22px 20px;
   }
-  .kicker { color: var(--accent); margin: 0 0 1rem; }
-  .name { font-size: clamp(3.2rem, 9.5vw, 7.5rem); }
-  .readout { color: var(--muted); line-height: 2; margin: 1.3rem 0 1.5rem; }
-  .cta { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+  /* the tab column lives outside the sheet, so reserve its width here or it
+     runs off the right edge at 100% zoom */
+  .rig {
+    position: relative;
+    width: min(var(--sheet-w), 100% - var(--tab-w) - 12px);
+  }
+  .sheet-wrap :global(.sheet) { height: min(var(--sheet-h), calc(100vh - 44px)); }
+  .sheet-wrap[hidden] { display: none; }
 
-  .workhead {
+  /* ---- header ---- */
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 9px 16px;
+    border-bottom: 1px solid var(--ink);
+    flex: none;
+  }
+  .head-l { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+  .head h1 {
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .head-r {
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    color: var(--label);
+    white-space: nowrap;
+  }
+  .head-r .date { color: var(--ink); }
+
+  /* ---- figure field ---- */
+  .body { flex: 1; display: flex; min-height: 0; }
+  .field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid var(--ink);
+  }
+  .field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 9px 18px 0;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    color: var(--label);
+  }
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 3), 1fr);
+    grid-auto-rows: 1fr;
+    gap: 10px;
+    padding: 8px 16px 14px;
+    min-height: 0;
+  }
+  .cell {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 0 var(--ink);
+    transition: box-shadow 0.25s ease;
+  }
+  .cell .well { position: absolute; inset: 0; }
+  .cell:hover, .cell:focus-visible, .cell.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .cell:hover .balloon::before,
+  .cell:focus-visible .balloon::before,
+  .cell.on .balloon::before { transform: scale(1); }
+  /* The caption is an overlay, not a bar: the figure gets the whole cell and
+     the label slides up only when you are actually reading that figure. */
+  .cell figcaption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-top: 1px solid var(--ink);
+    background: rgba(242, 247, 253, 0.96);
+    padding: 7px 10px 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    transform: translateY(101%);
+    transition: transform 0.28s var(--ease-open);
+  }
+  .cell:hover figcaption,
+  .cell:focus-visible figcaption,
+  .cell.on figcaption { transform: translateY(0); }
+  .cell .plus { display: none; }
+  .cell .psg { display: none; }
+
+  /* ---- hero column ---- */
+  .hero-col {
+    width: var(--hero-col);
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    padding: 9px 16px 14px 14px;
+  }
+  .hero-head {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    border-top: 1px solid var(--line);
-    padding-top: 0.8rem;
-    margin-bottom: 1.2rem;
+    padding-bottom: 8px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    color: var(--label);
   }
-  .count { color: var(--muted); }
-  .feature {
-    display: block;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    padding: 0.7rem;
-    text-decoration: none;
-    transition: border-color 0.15s;
+  .hero-head .hot { color: var(--red); }
+  .hero {
+    position: relative;
+    flex: 1;
+    border: 1.5px solid var(--ink);
+    background: var(--well);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
   }
-  .feature:hover { border-color: var(--accent); }
-  .feature img, .feature video { width: 100%; aspect-ratio: 16 / 11; object-fit: cover; border: 1px solid var(--line); display: block; }
-  .feature .mono-label { display: block; color: var(--muted); font-size: 0.6rem; padding-top: 0.6rem; }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
+  .hero .well { position: relative; flex: 1; min-height: 0; }
+  .hero-cap {
+    border-top: 1px solid var(--ink);
+    background: var(--fill-1);
+    padding: 9px 12px 10px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 9.5px;
+    line-height: 1.4;
+    letter-spacing: 0.07em;
+    color: var(--ink);
   }
-  @media (max-width: 900px) {
-    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-foot { display: flex; align-items: center; gap: 12px; margin-top: 9px; height: 46px; }
+  .hero-foot .spacer { flex: 1; }
+
+  /* corner center-marks, datum flag, NTS */
+  .cm {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background:
+      linear-gradient(var(--ink), var(--ink)) center / 1.5px 100% no-repeat,
+      linear-gradient(var(--ink), var(--ink)) center / 100% 1.5px no-repeat;
   }
-  @media (max-width: 640px) {
-    .hero { grid-template-columns: 1fr; }
-    .grid { grid-template-columns: 1fr; }
+  .cm.tl { left: 5px; top: 5px; }
+  .cm.tr { right: 5px; top: 5px; }
+  .cm.bl { left: 5px; bottom: 5px; }
+  .cm.br { right: 5px; bottom: 5px; }
+  .datum { position: absolute; left: 28px; bottom: 6px; display: flex; align-items: center; }
+  .datum .tri {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 9px solid var(--ink);
+  }
+  .datum .box {
+    margin-left: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 17px;
+    height: 17px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 9px;
+    color: var(--ink);
+  }
+  .nts {
+    position: absolute;
+    right: 28px;
+    bottom: 8px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 8.5px;
+    letter-spacing: 0.14em;
+    color: var(--label);
+    background: rgba(251, 252, 254, 0.9);
+    padding: 3px 5px;
+  }
+
+  /* ---- bottom strip ---- */
+  .strip { height: var(--notes-h); display: flex; border-top: 1px solid var(--ink); flex: none; }
+  .notes { flex: 1; border-right: 1px solid var(--ink); display: flex; flex-direction: column; min-width: 0; }
+  .notes-head {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 16px;
+    border-bottom: 1px solid var(--frame);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    color: var(--label);
+  }
+  .notes-head .tag { color: var(--red); letter-spacing: 0.14em; opacity: 0; }
+  .notes-body { position: relative; flex: 1; min-height: 0; }
+  .list {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    padding: 11px 16px;
+    list-style: none;
+    counter-reset: note;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+    transition: opacity var(--t-fade-out) ease;
+  }
+  .list li { display: flex; gap: 11px; align-items: baseline; }
+  .list li::before {
+    counter-increment: note;
+    content: counter(note) '.';
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--label);
+    flex: none;
+  }
+  .list .t { font-size: 12px; line-height: 1.45; color: var(--body); text-wrap: pretty; }
+  .swap {
+    position: absolute;
+    inset: 0;
+    padding: 11px 16px;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+    transition: opacity var(--t-fade-in) ease;
+  }
+  .swap-label {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10px;
+    line-height: 1.4;
+    letter-spacing: 0.1em;
+    color: var(--ink);
+    margin-bottom: 7px;
+  }
+  .swap-text { font-size: 12.5px; line-height: 1.55; color: var(--body); text-wrap: pretty; }
+  .swap-text :global(p) { margin: 0 0 6px; }
+  .swap-text :global(ul) { margin: 0; padding-left: 16px; }
+  .notes.busy .list { opacity: 0; }
+  .notes.busy .swap { opacity: 1; }
+  .notes.busy .tag { opacity: 1; }
+  .tools {
+    border-top: 1px solid var(--hair);
+    padding: 8px 16px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .tools .chip { padding: 4px 8px; font-size: 10px; }
+
+  /* ---- title block ---- */
+  .tblock { width: var(--tblock-w); flex: none; display: flex; flex-direction: column; min-width: 0; }
+  .tb-row { display: flex; border-bottom: 1px solid var(--ink); flex: none; }
+  .tb-row.grow { flex: 1 1 auto; min-height: 0; border-bottom: 0; }
+  .tb-cell { padding: 6px 12px; min-width: 0; }
+  .tb-cell.grow { flex: 1; border-right: 1px solid var(--frame); min-width: 0; }
+  .tb-cell.narrow { width: 96px; flex: none; }
+  .tb-cell.split { display: flex; flex-direction: column; padding: 0; }
+  .tb-cell.split > div { flex: 1; padding: 5px 10px; min-height: 0; overflow: hidden; }
+  .tb-cell.split > div:first-child { border-bottom: 1px solid var(--frame); }
+  /* the narrow column is tight: shed the wide tracking so nothing spills */
+  .tblock .mono { margin-bottom: 3px; font-weight: 400; letter-spacing: 0.1em; white-space: nowrap; }
+  .name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+  .role { margin-top: 3px; font-size: 9.5px; line-height: 1.3; color: var(--body-2); }
+  .big { font-family: var(--font-mono); font-weight: 500; font-size: 13px; color: var(--ink); white-space: nowrap; }
+  .sm { font-family: var(--font-mono); font-weight: 500; font-size: 10.5px; color: var(--ink); }
+  .links { display: flex; flex-direction: column; gap: 1px; justify-content: center; overflow: hidden; min-height: 0; }
+  .links a {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tol {
+    flex: none;
+    border-top: 1px solid var(--frame);
+    padding: 5px 12px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 8px;
+    line-height: 1.5;
+    letter-spacing: 0.06em;
+    color: var(--label);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cta { display: flex; border-top: 1px solid var(--ink); flex: none; }
+  .cta a {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    padding: 11px 12px;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+    .cta .primary {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-right: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.16em;
+    padding: 15px 14px;
+  }
+  .cta .primary:hover { background: var(--red); color: var(--paper); }
+  .cta .second { width: 124px; display: flex; align-items: center; }
+
+  /* ---- bookmark tabs ---- */
+  .tabs {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .tab {
+    position: relative;
+    height: 80px;
+    width: var(--tab-w);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid var(--ink);
+    border-left: none;
+    background: var(--well);
+    padding: 0;
+    transition: transform 0.32s var(--spring-tab);
+  }
+  .tab .nm {
+    writing-mode: vertical-rl;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 8.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink);
+    opacity: 0.62;
+    white-space: nowrap;
+    padding: 14px 0 6px;
+  }
+  /* the sheet number rides outside the tab as a balloon, the same glyph the
+     figure field uses, so the tab strip reads as callouts on the drawing */
+  .tab .n {
+    position: absolute;
+    left: -9px;
+    top: 5px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 8px;
+    color: var(--label);
+  }
+  .tab .bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--red);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .tab[aria-selected='true'] { transform: translateX(7px); }
+  .tab[aria-selected='true'] .nm { opacity: 1; }
+  .tab[aria-selected='true'] .n { color: var(--red); border-color: var(--red); }
+  .tab[aria-selected='true'] .bar { opacity: 1; }
+
+  /* ================= mobile ================= */
+  @media (max-width: 768px) {
+    .desk { padding: 0; }
+    /* flex so the tab strip can hop above the sheet with order */
+    .rig { width: 100%; display: flex; flex-direction: column; }
+    .sheet-wrap { min-width: 0; }
+    /* desktop stacks media over the cell and hides the caption until hover;
+       on a phone the card flows normally and the caption is always visible */
+    .cell .well { position: relative; inset: auto; min-height: 0; }
+    .cell :global(.media.fit) { position: static; width: 100%; height: auto; max-height: 300px; }
+    .cell figcaption { position: static; transform: none; background: var(--fill-1); }
+    .hero-col { overflow: hidden; }
+    .hero-foot :global(.stamp) { transform: rotate(-3deg) scale(0.78); transform-origin: right center; }
+    .tol { white-space: normal; overflow: visible; }
+    .head-r { white-space: normal; }
+    .sheet-wrap :global(.sheet) { height: auto; }
+    .head { flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px 16px; }
+    .head-l { flex-direction: column; gap: 6px; }
+    .head h1 { font-size: 24px; white-space: normal; }
+    .head-r { flex-direction: column; gap: 4px; font-size: 9.5px; }
+
+    .body { flex-direction: column-reverse; }
+    .field { border-right: 0; }
+    .field-head { font-size: 8.5px; padding: 16px 16px 0; }
+    .field-head span:first-child { max-width: 60%; }
+    .grid { grid-template-columns: 1fr; padding: 10px 16px 0; grid-auto-rows: auto; }
+    .cell { grid-column: auto !important; cursor: pointer; }
+    .cell .plus {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--red);
+      flex: none;
+      transition: transform var(--t-fade-out) ease;
+    }
+    .cell.open .plus { transform: rotate(45deg); }
+    .cell .psg {
+      display: block;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      padding: 0 12px;
+      transition: max-height 0.5s var(--ease-open), opacity var(--t-fade-in) ease,
+        padding 0.5s var(--ease-open);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--body);
+    }
+    .cell.open .psg { max-height: 480px; opacity: 1; padding: 0 12px 10px; }
+    .cell .psg :global(p) { margin: 9px 0 0; }
+
+    .hero-col { width: auto; padding: 12px 16px 0; }
+    .hero { min-height: 300px; }
+    .hero-foot { margin-top: 12px; height: auto; flex-wrap: wrap; gap: 10px; }
+
+    .strip { height: auto; flex-direction: column; }
+    .notes { border-right: 0; }
+    .notes-head { border-top: 1px solid var(--ink); }
+    .notes-head span:last-child { display: none; }
+    .notes-body { min-height: 0; }
+    .list { position: relative; inset: auto; }
+    .swap { display: none; } /* mobile expands passages in place instead */
+    .tblock { width: auto; border-top: 1px solid var(--ink); }
+    .links a { min-height: 24px; font-size: 11.5px; }
+    .cta { flex-direction: column; }
+    .cta .primary, .cta .second { width: auto; border-right: 0; min-height: 48px; display: flex; align-items: center; }
+    .cta .second { border-top: 1px solid var(--frame); }
+
+    /* tabs become a scrollable chip strip under the header */
+    .tabs {
+      position: static;
+      transform: none;
+      flex-direction: row;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 0 16px 14px;
+      background: var(--paper);
+      order: -1;
+    }
+    .tab {
+      height: auto;
+      width: auto;
+      min-height: 44px;
+      flex: none;
+      gap: 7px;
+      padding: 10px 12px;
+      border: 1.5px solid var(--ink);
+    }
+    .tab .nm { writing-mode: horizontal-tb; font-size: 10px; padding: 0; }
+    .tab .n { position: static; width: auto; height: auto; border: 0; background: none; color: var(--red); font-size: 10px; }
+    .tab[aria-selected='true'] { transform: none; background: var(--fill-2); }
+    .tab .bar { width: 100%; height: 3px; bottom: auto; top: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tab, .cell, .list, .swap, .cell .psg, .cell .plus { transition: none; }
   }
 </style>
+
+<script>
+  const rig = document.querySelector('.rig')!;
+  const sheets = [...rig.querySelectorAll<HTMLElement>('.sheet-wrap')];
+  const tabs = [...rig.querySelectorAll<HTMLButtonElement>('.tab')];
+
+  function select(i: number, focus = false) {
+    sheets.forEach((s, k) => (s.hidden = k !== i));
+    tabs.forEach((t, k) => {
+      const on = k === i;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      if (on && focus) t.focus();
+    });
+    // a hidden sheet's videos are paused by the browser; start the visible one
+    for (const v of sheets[i].querySelectorAll('video')) v.play?.().catch(() => {});
+  }
+
+  tabs.forEach((tab, i) => {
+    tab.addEventListener('click', () => select(i));
+    tab.addEventListener('keydown', (e) => {
+      const d = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1
+        : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1
+        : e.key === 'Home' ? -i
+        : e.key === 'End' ? tabs.length - 1 - i
+        : 0;
+      if (!d) return;
+      e.preventDefault();
+      select((i + d + tabs.length) % tabs.length, true);
+    });
+  });
+
+  // Desktop: hovering a figure swaps the notes block for that figure's passage.
+  const fine = window.matchMedia('(hover: hover) and (min-width: 769px)');
+  for (const sheet of sheets) {
+    const notes = sheet.querySelector<HTMLElement>('.notes')!;
+    const tag = sheet.querySelector<HTMLElement>('.notes-head .tag')!;
+    const label = sheet.querySelector<HTMLElement>('.swap-label')!;
+    const text = sheet.querySelector<HTMLElement>('.swap-text')!;
+
+    for (const cell of sheet.querySelectorAll<HTMLElement>('.cell')) {
+      const n = String(Number(cell.dataset.fig) + 1).padStart(2, '0');
+      const cap = cell.querySelector('.cap')?.textContent ?? '';
+      const psg = cell.querySelector('.psg')?.innerHTML ?? '';
+
+      const show = () => {
+        if (!fine.matches) return;
+        tag.textContent = `FIG ${n}`;
+        label.textContent = `FIG ${n} / ${cap}`;
+        text.innerHTML = psg;
+        notes.classList.add('busy');
+        cell.classList.add('on');
+      };
+      const hide = () => {
+        notes.classList.remove('busy');
+        cell.classList.remove('on');
+      };
+
+      cell.addEventListener('mouseenter', show);
+      cell.addEventListener('mouseleave', hide);
+      cell.addEventListener('focus', show);
+      cell.addEventListener('blur', hide);
+      // Touch and narrow screens expand the passage inside the card instead.
+      cell.addEventListener('click', () => {
+        if (fine.matches) return;
+        const open = cell.classList.contains('open');
+        for (const c of sheet.querySelectorAll('.cell.open')) c.classList.remove('open');
+        cell.classList.toggle('open', !open);
+      });
+    }
+  }
+</script>

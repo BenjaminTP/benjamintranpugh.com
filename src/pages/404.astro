@@ -1,16 +1,45 @@
 ---
-import Base from '../layouts/Base.astro';
+import Sheet from '../layouts/Sheet.astro';
+import Frame from '../components/Frame.astro';
+import Stamp from '../components/Stamp.astro';
 ---
-<Base title="404 | Benjamin Tran-Pugh">
-  <main class="wrap nf">
-    <p class="code display">404</p>
-    <p class="msg mono-label">PAGE NOT FOUND / SIGNAL LOST</p>
-    <a class="btn" href="/">← BACK TO HOME</a>
+
+<Sheet title="404 | Benjamin Tran-Pugh" description="This sheet does not exist.">
+  <main class="desk">
+    <div class="rig">
+      <Frame zones={4}>
+        <div class="pad">
+          <span class="code">BTP-404</span>
+          <h1>Sheet not found</h1>
+          <p>That drawing number is not in the set.</p>
+          <a class="btn" href="/">← ALL DRAWINGS</a>
+        </div>
+        <div class="foot">
+          <div class="tol">
+            DIMENSIONS IN MM / TOLERANCES ±0.5 UNLESS NOTED / DO NOT SCALE DRAWING
+          </div>
+          <Stamp sheet="SHEET 404" small />
+        </div>
+      </Frame>
+    </div>
   </main>
-</Base>
+</Sheet>
 
 <style>
-  .nf { text-align: center; padding-top: 14vh; padding-bottom: 14vh; }
-  .code { font-size: clamp(5rem, 18vw, 12rem); color: var(--accent); }
-  .msg { color: var(--muted); margin: 1rem 0 2rem; }
+  .desk { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 34px 20px; }
+  .rig { width: min(720px, 100%); }
+  .pad { padding: 46px 24px; border-bottom: 1px solid var(--ink); }
+  .code { font-family: var(--font-mono); font-weight: 500; font-size: 12px; letter-spacing: 0.16em; color: var(--red); }
+  h1 { margin: 12px 0 0; font-size: 40px; line-height: 1.02; letter-spacing: -0.02em; color: var(--ink); }
+  p { margin: 12px 0 22px; color: var(--body); }
+  .btn {
+    display: inline-block;
+    border: 1.5px solid var(--ink); background: var(--fill-2); padding: 11px 14px;
+    font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.12em;
+  }
+  .foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; }
+  .tol {
+    font-family: var(--font-mono); font-weight: 500; font-size: 8.5px;
+    line-height: 1.5; letter-spacing: 0.1em; color: var(--label);
+  }
 </style>

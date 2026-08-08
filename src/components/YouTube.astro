@@ -1,6 +1,6 @@
 ---
 /**
- * Privacy-friendly YouTube embed for project pages.
+ * Privacy-friendly YouTube embed, framed as a figure well.
  * Usage in .mdx: <YouTube id="uuaAOCRsIaw" caption="FULL DEMO" />
  */
 interface Props {
@@ -10,22 +10,20 @@ interface Props {
 }
 const { id, title = 'YouTube video', caption } = Astro.props;
 ---
-<figure class="yt">
+<figure class="fig yt">
   <div class="frame">
     <iframe
       src={`https://www.youtube-nocookie.com/embed/${id}`}
       title={title}
       loading="lazy"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-      allowfullscreen
-    ></iframe>
+      allowfullscreen></iframe>
   </div>
-  {caption && <figcaption class="mono-label">{caption}</figcaption>}
+  {caption && <figcaption>{caption}</figcaption>}
 </figure>
 
 <style>
-  .yt { margin: 1.6rem 0; }
-  .frame { aspect-ratio: 16 / 9; border: 1px solid var(--line); background: #000; }
+  .yt { margin: 18px 0; clear: both; }
+  .frame { aspect-ratio: 16 / 9; background: var(--well); }
   iframe { width: 100%; height: 100%; display: block; border: 0; }
-  figcaption { color: var(--muted); font-size: 0.62rem; padding-top: 0.55rem; }
 </style>

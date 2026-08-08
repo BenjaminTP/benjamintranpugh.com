@@ -1,0 +1,69 @@
+---
+/**
+ * One image or video inside a well. The element owns its own sizing so it can
+ * never overflow whatever frame it is dropped into.
+ *
+ *   mode="fit"     fills a fixed-height well, letterboxed (index cells, heroes)
+ *   mode="natural" keeps its own aspect and sets the well height (project figures)
+ *
+ * Missing files render the hatched tile instead of a broken image, and a video
+ * that fails at runtime swaps to the same tile. Never a black or empty well.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { isVideo } from '../lib/sheet';
+
+interface Props {
+  src: string; // relative to public/images/
+  alt?: string;
+  poster?: string;
+  autoplay?: boolean;
+  mode?: 'fit' | 'natural';
+}
+const { src, alt = '', poster, autoplay = true, mode = 'natural' } = Astro.props;
+const exists = fs.existsSync(path.join(process.cwd(), 'public', 'images', src));
+const video = isVideo(src);
+---
+{
+  !exists ? (
+    <span class="hatch">
+      <span>MEDIA NOT FOUND / {src}</span>
+    </span>
+  ) : video ? (
+    <video
+      class={`media ${mode}`}
+      src={`/images/${src}`}
+      poster={poster ? `/images/${poster}` : undefined}
+      aria-label={alt}
+      autoplay={autoplay}
+      loop
+      muted
+      playsinline
+      preload="metadata"
+      data-fallback
+    />
+  ) : (
+    <img class={`media ${mode}`} src={`/images/${src}`} alt={alt} loading="lazy" />
+  )
+}
+
+<script>
+  // A video that cannot decode gets the hatched tile, so the well is never black.
+  for (const v of document.querySelectorAll<HTMLVideoElement>('video[data-fallback]')) {
+    v.addEventListener('error', () => {
+      const tile = document.createElement('span');
+      tile.className = 'hatch';
+      const label = document.createElement('span');
+      label.textContent = 'VIDEO / SEE THE WRITEUP';
+      tile.appendChild(label);
+      v.replaceWith(tile);
+    });
+  }
+  // prefers-reduced-motion: hold the first frame instead of looping
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (const v of document.querySelectorAll<HTMLVideoElement>('video')) {
+      v.autoplay = false;
+      v.pause();
+    }
+  }
+</script>

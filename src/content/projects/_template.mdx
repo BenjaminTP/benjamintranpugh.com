@@ -1,37 +1,47 @@
 ---
-# COPY THIS FILE to add a project:
+# COPY THIS FILE to add a project sheet:
 #   1. Duplicate it as your-project-name.mdx (the filename becomes the URL slug)
 #   2. Fill in the frontmatter below
-#   3. Drop images/videos into public/images/your-project-name/: everything
-#      there appears automatically in a MEDIA grid at the bottom of the page
-#   4. Optionally place specific files inline in the text with <Figure>
-#      (inline files are excluded from the MEDIA grid automatically)
+#   3. Drop media into public/images/your-project-name/ and declare each file
+#      with a <Figure> in the body. Undeclared files do not appear anywhere.
+#   4. Give the other projects a higher order: if this one is the newest
 #   5. git add -A && git commit -m "Add project" && git push
 # Files starting with "_" are ignored by the site.
+# Never type an em dash or a middot. Use " / " or ":" instead.
 
 title: Project Name
-order: 8            # position on the home grid (1 = first)
-featured: false     # true = highlighted placement
-summary: One sentence shown on the project card.
-telemetry: "SPEC:VALUE | SPEC:VALUE"   # short mono spec line on the card
-tags: [Tool One, Tool Two]
-cover: your-project-name/hero.jpg      # card image, relative to public/images/
-# github: https://github.com/BenjaminTP/repo-name   # optional, uncomment to show link
-# writeup: https://github.com/BenjaminTP/repo/blob/main/writeup.md  # optional; a writeup
-#          you authored. Becomes the primary button on the page, ahead of the source link.
+order: 10                              # lowest = newest = SHEET 01
+short: PROJECT                         # bookmark tab label, 12 chars max
+summary: One sentence. Becomes the intro paragraph on the project page.
+telemetry: "SPEC:VALUE | SPEC:VALUE"   # header spec, STATUS cell, hero callouts
+tags: [Tool One, Tool Two, Jan 2026]   # TOOLS chips; keep the date entry last
+cover: your-project-name/hero.jpg      # hero media, relative to public/images/
+heroLabel: "WHAT THE HERO SHOWS / SECOND CLAUSE"
+# heroPoster: your-project-name/still.jpg   # optional, for a video hero
+# github: https://github.com/BenjaminTP/repo-name
+# writeup: https://github.com/BenjaminTP/repo/blob/main/writeup.md
+# related: { href: /projects/other-project/, label: "SEE ALSO →" }
 ---
 
 ## Overview
 
 What the project is and why you built it. Keep it factual and first person.
-
-<Figure src="your-project-name/hero.jpg" caption="CAPTION IN CAPS" />
+This prose becomes the numbered GENERAL NOTES on the index sheet.
 
 ## Build
 
-How you made it. Use align="right" or align="left" to wrap text around a smaller image:
+How you made it. A plain figure explains the paragraph ABOVE it:
 
-<Figure src="your-project-name/detail.jpg" align="right" caption="DETAIL SHOT" />
+Working from the drawings, I modeled each part and built up the assembly.
+
+<Figure src="your-project-name/detail.jpg" caption="CAPTION IN CAPS" />
+
+Add align="right" to float it beside the text instead, in which case it
+explains the paragraph BELOW it:
+
+<Figure src="your-project-name/other.jpg" align="right" caption="DETAIL SHOT" />
+
+This paragraph is the one that shows when you hover that figure on the index.
 
 ## Result
 

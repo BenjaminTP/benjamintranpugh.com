@@ -1,0 +1,126 @@
+---
+/**
+ * The sheet: outer border, inner border, and the numbered/lettered tick
+ * strips in the margin between them. Strips are decorative only.
+ * `zones` sets how many lettered rows run down the sides (A-D on the
+ * index, A-H on a project page).
+ */
+interface Props { zones?: number; fixed?: boolean; ornaments?: boolean }
+const { zones = 4, fixed = false, ornaments = false } = Astro.props;
+const cols = ['1', '2', '3', '4', '5', '6'];
+const rows = Array.from({ length: zones }, (_, i) => String.fromCharCode(65 + i));
+---
+<div class={`sheet${fixed ? ' fixed' : ''}${ornaments ? ' orn' : ''}`}>
+  <div class="inner-border" aria-hidden="true"></div>
+  {
+    /* Plotter furniture: centring arrows at the midpoint of each edge and
+       registration crosses inside the corners. Decoration only, living in the
+       margin the tick strips already occupy, so nothing is obstructed. */
+    ornaments && (
+      <div class="orns" aria-hidden="true">
+        <span class="ctr t" />
+        <span class="ctr b" />
+        <span class="reg tl" />
+        <span class="reg tr" />
+        <span class="reg bl" />
+        <span class="reg br" />
+      </div>
+    )
+  }
+  <div class="ticks top" aria-hidden="true">{cols.map((z) => <span>{z}</span>)}</div>
+  <div class="ticks bottom" aria-hidden="true">{cols.map((z) => <span>{z}</span>)}</div>
+  <div class="ticks left" aria-hidden="true">{rows.map((z) => <span>{z}</span>)}</div>
+  <div class="ticks right" aria-hidden="true">{rows.map((z) => <span>{z}</span>)}</div>
+  <div class="content"><slot /></div>
+</div>
+
+<style>
+  .sheet {
+    position: relative;
+    background: var(--paper);
+    border: var(--border-outer) solid var(--ink);
+  }
+  .inner-border {
+    position: absolute;
+    inset: var(--inset);
+    border: var(--border-inner) solid var(--ink);
+    pointer-events: none;
+  }
+  .ticks {
+    position: absolute;
+    display: flex;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10px;
+    color: var(--label);
+  }
+  .ticks span {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .top, .bottom {
+    left: var(--inset);
+    right: var(--inset);
+    height: var(--tick);
+  }
+  .top { top: 3px; }
+  .bottom { bottom: 3px; }
+  .top span, .bottom span { border-left: 1px solid var(--frame); }
+  .left, .right {
+    top: var(--inset);
+    bottom: var(--inset);
+    width: var(--tick);
+    flex-direction: column;
+  }
+  .left { left: 3px; }
+  .right { right: 3px; }
+  .left span, .right span { border-top: 1px solid var(--frame); }
+
+  /* ---- ornaments (project sheets only) ---- */
+  .orns { position: absolute; inset: 0; pointer-events: none; }
+  .orns span { position: absolute; }
+  /* centring arrow: a small solid triangle pointing in from the edge */
+  .ctr {
+    left: 50%;
+    margin-left: -5px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+  }
+  .ctr.t { top: 4px; border-top: 7px solid var(--frame); }
+  .ctr.b { bottom: 4px; border-bottom: 7px solid var(--frame); }
+  /* registration cross, tucked just inside the inner border corners */
+  .reg {
+    width: 11px;
+    height: 11px;
+    background:
+      linear-gradient(var(--frame), var(--frame)) center / 1px 100% no-repeat,
+      linear-gradient(var(--frame), var(--frame)) center / 100% 1px no-repeat;
+  }
+  .reg.tl { left: calc(var(--inset) + 7px); top: calc(var(--inset) + 7px); }
+  .reg.tr { right: calc(var(--inset) + 7px); top: calc(var(--inset) + 7px); }
+  .reg.bl { left: calc(var(--inset) + 7px); bottom: calc(var(--inset) + 7px); }
+  .reg.br { right: calc(var(--inset) + 7px); bottom: calc(var(--inset) + 7px); }
+
+  .content {
+    position: relative;
+    margin: calc(var(--inset) - 1px);
+    display: flex;
+    flex-direction: column;
+  }
+  /* the index sheet fills the viewport and never scrolls */
+  .fixed .content { position: absolute; inset: calc(var(--inset) + 1px); margin: 0; }
+
+  @media (max-width: 768px) {
+    .sheet { border-width: 2px; }
+    .ticks.left, .ticks.right, .inner-border, .orns { display: none; }
+    /* the side margin goes away here, but the top and bottom zone rulers stay,
+       so the content still needs to clear them or the numbers sit on the text */
+    .content { margin: 0; padding: calc(var(--tick) + 4px) 0; }
+    .fixed .content { position: relative; inset: auto; }
+  }
+</style>

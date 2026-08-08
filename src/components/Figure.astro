@@ -1,48 +1,46 @@
 ---
 /**
- * Image or video with caption for project pages.
- * `src` is relative to public/images/, e.g. "robot-arm-2/hero.jpg".
- * `align` = "full" (default) | "left" | "right".
- * Video files (mp4/webm/mov) render as a player; set autoplay for a
- * silent looping clip instead of one with controls.
- * If the file doesn't exist yet, a labeled hatched placeholder renders
- * instead, so pages never look broken while photos are missing.
+ * A numbered figure on a project sheet: media well, balloon, caption bar.
+ * `align` = "full" (default) | "left" | "right". A floated figure sits beside
+ * the prose that follows it, which is also how sheet.ts pairs it with its
+ * passage on the index. The balloon number comes from a CSS counter, so
+ * figures stay numbered in document order with no bookkeeping.
+ *
+ * The media keeps its own aspect ratio (mode="natural"), so a wide plot makes
+ * a short frame and a tall photo a tall one. Nothing is letterboxed into dead
+ * white space.
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import Placeholder from './Placeholder.astro';
+import Media from './Media.astro';
 
 interface Props {
   src: string;
   caption?: string;
   align?: 'full' | 'left' | 'right';
   alt?: string;
-  ratio?: string;
   autoplay?: boolean;
+  /** index="false" keeps it here but off the index sheet (see lib/sheet.ts) */
+  index?: string;
 }
-const { src, caption, align = 'full', alt, ratio = '16/10', autoplay = false } = Astro.props;
-// resolve from project root: import.meta.url is unreliable after bundling
-const exists = fs.existsSync(path.join(process.cwd(), 'public', 'images', src));
-const isVideo = ['.mp4', '.webm', '.mov'].includes(path.extname(src).toLowerCase());
+const { src, caption, align = 'full', alt, autoplay } = Astro.props;
 ---
 <figure class={`fig fig-${align}`}>
-  {
-    !exists ? (
-      <Placeholder label={`${isVideo ? 'VIDEO' : 'IMAGE'} / ${src}`} ratio={ratio} />
-    ) : isVideo ? (
-      <video
-        src={`/images/${src}`}
-        aria-label={alt ?? caption ?? ''}
-        controls={!autoplay}
-        autoplay={autoplay}
-        loop={autoplay}
-        muted
-        playsinline
-        preload="metadata"
-      />
-    ) : (
-      <img src={`/images/${src}`} alt={alt ?? caption ?? ''} loading="lazy" />
-    )
-  }
+  <div class="well" data-zoom={src} data-cap={caption}>
+    <Media src={src} alt={alt ?? caption} autoplay={autoplay ?? true} mode="natural" />
+    <span class="balloon" aria-hidden="true"><span class="num"></span></span>
+  </div>
   {caption && <figcaption>{caption}</figcaption>}
 </figure>
+
+<style>
+  .fig { margin: 18px 0; }
+  /* full-width figures cap their height so a tall photo cannot run the page;
+     the media stays centred in the frame rather than stretching */
+  .fig-full { width: 100%; clear: both; }
+  .fig-full .well { max-height: 430px; overflow: hidden; display: flex; }
+  .fig-full :global(.media.natural) { margin: 0 auto; max-height: 430px; object-fit: contain; }
+  .fig-left { float: left; width: min(42%, 20rem); margin: 4px 22px 10px 0; }
+  .fig-right { float: right; width: min(42%, 20rem); margin: 4px 0 10px 22px; }
+  @media (max-width: 768px) {
+    .fig-left, .fig-right { float: none; width: 100%; margin: 18px 0; }
+  }
+</style>

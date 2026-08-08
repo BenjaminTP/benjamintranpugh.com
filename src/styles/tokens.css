@@ -1,29 +1,52 @@
 /* ============================================================
    DESIGN TOKENS: the single source of truth for all visuals.
-   Change a value here and it changes everywhere.
-   Never hardcode colors, fonts, or spacing in components.
+   The site is a set of engineering drawing sheets. Change a
+   value here and it changes everywhere. Never hardcode a
+   color, font, or magic number in a component.
    ============================================================ */
 :root {
-  /* color */
-  --bg: #131519;            /* page ground, deep charcoal */
-  --panel: #1a1d23;         /* cards, raised surfaces */
-  --panel-2: #16181d;       /* subtle inset surfaces */
-  --line: #2a2e36;          /* borders, hairlines */
-  --ink: #e9e8e3;           /* primary text */
-  --muted: #9a9da4;         /* secondary text */
-  --accent: #f2a33c;        /* amber, the only accent color */
+  /* ---- color ---- */
+  --desk: #dfe5ee;        /* behind the sheet */
+  --paper: #fbfcfe;       /* the sheet itself */
+  --well: #ffffff;        /* figure wells */
+  --ink: #12325e;         /* borders, headings, primary text */
+  --frame: #a8c2e0;       /* grid and frame lines */
+  --hair: #dce6f2;        /* hairlines inside cards */
+  --fill-1: #f2f7fd;      /* caption bars */
+  --fill-2: #eef4fc;      /* chips, CTA cells */
+  --fill-3: #dbe8f8;      /* balloon fill on hover */
+  --body: #35496b;        /* body prose */
+  --body-2: #4a638c;      /* secondary text */
+  --label: #46618a;       /* small mono labels */
+  --red: #b03b2e;         /* drawing numbers, active markers, stamp */
 
-  /* background grid */
-  --grid-line: rgba(255, 255, 255, 0.035);
-  --grid-size: 44px;
-
-  /* type */
-  --font-display: 'Anton', 'Arial Narrow', 'Impact', sans-serif;
+  /* ---- type ---- */
   --font-body: 'Archivo', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', Consolas, monospace;
 
-  /* layout */
-  --wrap: 72rem;                       /* max content width */
-  --pad: clamp(1.1rem, 4vw, 2.75rem);  /* horizontal page padding */
-  --space: clamp(2.2rem, 5vw, 4rem);   /* between page sections */
+  /* ---- sheet geometry ----
+     The handoff targets a 1420x980 sheet, which does not fit a laptop
+     viewport at 100% zoom: the tabs ran off the right and the sheet was
+     cut off. Everything fixed is held at ~0.82 of the spec so the whole
+     drawing sits on screen at 100%, which is the "80% view" that read
+     correctly. Proportions are unchanged. */
+  --border-outer: 2.5px;
+  --border-inner: 1px;
+  --inset: 22px;          /* gap between outer and inner border */
+  --tick: 19px;           /* tick strip thickness */
+  --sheet-w: 1180px;      /* index sheet target width */
+  --sheet-h: 812px;       /* index sheet target height */
+  --tab-w: 34px;          /* bookmark tab width, reserved beside the sheet */
+  --hero-col: 388px;      /* index hero column */
+  --notes-h: 214px;     /* index bottom strip */
+  --tblock-w: 424px;      /* index title block */
+  --prose-w: 384px;       /* project page prose column */
+  --hero-h: 420px;        /* project page hero well */
+
+  /* ---- motion ---- */
+  --spring: cubic-bezier(0.22, 1.2, 0.36, 1);
+  --spring-tab: cubic-bezier(0.3, 1.2, 0.4, 1);
+  --ease-open: cubic-bezier(0.3, 1, 0.4, 1);
+  --t-fade-out: 0.3s;
+  --t-fade-in: 0.35s;
 }

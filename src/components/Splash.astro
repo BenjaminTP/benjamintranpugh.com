@@ -1,0 +1,270 @@
+---
+/**
+ * Title sheet. Covers the index on load, holds for 2s, then peels away from
+ * the right edge like a page being turned off the drawing underneath.
+ * Clicking it peels immediately.
+ *
+ * The automatic peel is a pure CSS animation with `forwards`, so it clears
+ * itself with no JavaScript: if scripting is off or a script fails, the sheet
+ * still leaves and the index is never stranded behind it. The click path
+ * swaps the animation for a transition to the same end state, which restarts
+ * cleanly from wherever the hold had got to.
+ *
+ * aria-hidden throughout: it is decoration, and the index below it is fully
+ * available to assistive tech from the first paint.
+ */
+import Frame from './Frame.astro';
+
+// Title-block values are all true. A drawing's title block is the one place a
+// reader expects hard fact, so nothing here is invented (see CLAUDE.md).
+const cells = [
+  ['DRAWN BY', 'B. TRAN-PUGH'],
+  ['DISCIPLINE', 'MECHANICAL'],
+  ['INSTITUTION', 'UNIV. OF WATERLOO'],
+  ['DWG NO.', 'BTP-000'],
+  ['SHEET', '00 OF 08'],
+  ['SCALE', 'NTS'],
+  ['UNITS', 'MM'],
+  ['PROJECTION', 'THIRD ANGLE'],
+];
+---
+<div class="splash" aria-hidden="true">
+  <div class="stage">
+    <div class="sag">
+    <Frame zones={4} fixed>
+      <div class="plate">
+        <div class="measured">
+          <h1>Benjamin Tran&#8209;Pugh</h1>
+          {/* the subtitle is set as a dimension across the width of the name */}
+          <div class="dim">
+            <span class="ext l"></span>
+            <span class="ext r"></span>
+            <span class="rule"></span>
+            <span class="arrow l"></span>
+            <span class="arrow r"></span>
+            <span class="cap">Project Portfolio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tblock">
+        {
+          cells.map(([k, v]) => (
+            <div class="cell">
+              <span class="k">{k}</span>
+              <span class="v">{v}</span>
+            </div>
+          ))
+        }
+        <div class="tol">DIMENSIONS IN MM / TOLERANCES ±0.5 UNLESS NOTED / DO NOT SCALE DRAWING</div>
+      </div>
+    </Frame>
+    </div>
+  </div>
+</div>
+
+<style>
+  .splash {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 22px 20px;
+    background: var(--desk);
+    cursor: pointer;
+    perspective: 2000px;
+    perspective-origin: 30% 50%;
+    animation: splash-fade 0.85s cubic-bezier(0.55, 0, 0.85, 0.4) 2s forwards;
+  }
+  .stage {
+    width: min(var(--sheet-w), 100% - var(--tab-w) - 12px);
+    height: min(var(--sheet-h), calc(100vh - 44px));
+    /* hinged at the left edge, so the right edge lifts first and the peel
+       travels right to left across the sheet */
+    transform-origin: 0% 50%;
+    transform-style: preserve-3d;
+    animation: peel-swing 1.15s cubic-bezier(0.5, 0, 0.72, 0.45) 2s forwards;
+  }
+  /* Paper is not a rigid plane. The sheet sits in its own layer and runs the
+     same duration on a laggier curve, so it trails the swing and droops under
+     its own weight instead of turning like a hinged board. */
+  .sag {
+    height: 100%;
+    transform-origin: 0% 45%;
+    animation: peel-sag 1.15s cubic-bezier(0.25, 0.55, 0.35, 1) 2s forwards;
+  }
+  .sag :global(.sheet) { height: 100%; }
+
+  /* ---- name and its dimension ---- */
+  .plate {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .measured { display: inline-flex; flex-direction: column; }
+  h1 {
+    margin: 0;
+    font-size: clamp(2.6rem, 7.4vw, 5.6rem);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+
+  .dim { position: relative; height: 40px; margin-top: 16px; }
+  /* extension lines: drop from each end of the measured feature */
+  .ext {
+    position: absolute;
+    top: -10px;
+    width: 1px;
+    height: 32px;
+    background: var(--frame);
+  }
+  .ext.l { left: 0; }
+  .ext.r { right: 0; }
+  /* the dimension line itself */
+  .rule {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 15px;
+    height: 1px;
+    background: var(--frame);
+  }
+  /* arrowheads, pointing outward into the extension lines */
+  .arrow {
+    position: absolute;
+    top: 11px;
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+  }
+  .arrow.l { left: 0; border-right: 9px solid var(--frame); }
+  .arrow.r { right: 0; border-left: 9px solid var(--frame); }
+  /* the text breaks the line, the way a dimension value does */
+  .cap {
+    position: absolute;
+    left: 50%;
+    top: 6px;
+    transform: translateX(-50%);
+    padding: 0 14px;
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: clamp(10px, 1.35vw, 13px);
+    letter-spacing: 0.3em;
+    text-indent: 0.3em; /* balance the trailing letter-space so it stays centred */
+    text-transform: uppercase;
+    color: var(--label);
+    white-space: nowrap;
+  }
+
+  /* ---- corner title block ---- */
+  .tblock {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 372px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    border-top: 1px solid var(--ink);
+    border-left: 1px solid var(--ink);
+    background: var(--paper);
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--frame);
+    border-right: 1px solid var(--frame);
+    min-width: 0;
+  }
+  .cell:nth-child(2n) { border-right: 0; }
+  .k {
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 7.5px;
+    letter-spacing: 0.16em;
+    color: var(--label);
+  }
+  .v {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10.5px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tol {
+    grid-column: 1 / -1;
+    padding: 5px 10px 6px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 7px;
+    letter-spacing: 0.03em;
+    color: var(--label);
+    white-space: nowrap;
+  }
+
+  @keyframes splash-fade {
+    0%, 68% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
+  }
+  @keyframes peel-swing {
+    0% { transform: rotateY(0deg) translate3d(0, 0, 0); }
+    28% { transform: rotateY(-24deg) translate3d(-2%, 1%, 0); }
+    100% { transform: rotateY(-86deg) translate3d(-138%, 11%, 0); }
+  }
+  @keyframes peel-sag {
+    0% { transform: rotateZ(0deg) skewY(0deg); }
+    28% { transform: rotateZ(1.6deg) skewY(1.3deg); }
+    64% { transform: rotateZ(5.4deg) skewY(3.1deg); }
+    100% { transform: rotateZ(11deg) skewY(5.2deg); }
+  }
+
+  /* click to dismiss: drop the animation and transition to the same end state */
+  .splash.go {
+    animation: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.6s cubic-bezier(0.55, 0, 0.85, 0.4),
+      visibility 0.6s step-end;
+  }
+  .splash.go .stage {
+    animation: none;
+    transform: rotateY(-86deg) translate3d(-138%, 11%, 0);
+    transition: transform 0.8s cubic-bezier(0.5, 0, 0.72, 0.45);
+  }
+  .splash.go .sag {
+    animation: none;
+    transform: rotateZ(11deg) skewY(5.2deg);
+    transition: transform 0.8s cubic-bezier(0.25, 0.55, 0.35, 1);
+  }
+
+  /* no hold, no peel: get out of the way at once */
+  @media (prefers-reduced-motion: reduce) {
+    .splash { animation: splash-fade 0.2s linear 0.6s forwards; }
+    .stage, .sag { animation: none; }
+    .splash.go, .splash.go .stage, .splash.go .sag { transition: none; }
+  }
+
+  @media (max-width: 768px) {
+    .splash { padding: 0; }
+    .stage { width: 100%; height: 100%; }
+    h1 { font-size: clamp(2rem, 10vw, 3.2rem); }
+    .tblock { width: 100%; }
+  }
+</style>
+
+<script>
+  const splash = document.querySelector<HTMLElement>('.splash');
+  splash?.addEventListener('click', () => splash.classList.add('go'), { once: true });
+</script>

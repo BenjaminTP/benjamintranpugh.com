@@ -1,99 +1,295 @@
 ---
 import { getCollection, render } from 'astro:content';
-import Base from '../../layouts/Base.astro';
+import Sheet from '../../layouts/Sheet.astro';
+import Frame from '../../components/Frame.astro';
+import Media from '../../components/Media.astro';
+import Stamp from '../../components/Stamp.astro';
+import Projection from '../../components/Projection.astro';
+import Lightbox from '../../components/Lightbox.astro';
 import Figure from '../../components/Figure.astro';
 import Compare from '../../components/Compare.astro';
-import Gallery from '../../components/Gallery.astro';
 import Sim from '../../components/Sim.astro';
 import Stats from '../../components/Stats.astro';
 import YouTube from '../../components/YouTube.astro';
+import { sheetOf, toolsAndDate } from '../../lib/sheet';
 
 export async function getStaticPaths() {
-  const projects = await getCollection('projects');
-  return projects.map((p) => ({ params: { slug: p.id }, props: { project: p } }));
+  const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+  return projects.map((p, i) => ({
+    params: { slug: p.id },
+    props: { project: p, index: i, all: projects },
+  }));
 }
 
-const { project } = Astro.props;
+const { project, index, all } = Astro.props;
 const { Content } = await render(project);
-const { title, telemetry, tags, github, writeup, summary } = project.data;
-
-// files already placed inline via <Figure>, plus the cover (already on the
-// card), so the gallery skips them and nothing appears on the page twice
-const inlineMedia = [
-  ...[...(project.body ?? '').matchAll(/src="([^"]+)"/g)].map((m) => m[1]),
-  project.data.cover ?? '',
-];
-
-const all = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
-const i = all.findIndex((p) => p.id === project.id);
-const prev = all[i - 1];
-const next = all[i + 1];
+const d = project.data;
+const id = sheetOf(index, all.length);
+const { tools, date } = toolsAndDate(d.tags);
+const next = all[(index + 1) % all.length];
+const nextId = sheetOf((index + 1) % all.length, all.length);
+// the spec string doubles as the status cell; a failure reads in red
+const status = d.telemetry.split(' | ');
+const FAIL = /OVERDAMPED|FAILED|ABANDONED/;
 ---
-<Base title={`${title} | Benjamin Tran-Pugh`} description={summary}>
-  <main class="wrap">
-    <header class="head">
-      <a class="back mono-label" href="/#work">← ALL PROJECTS</a>
-      <h1 class="display">{title}</h1>
-      <p class="tele mono-label">{telemetry}</p>
-      <p class="meta mono-label">{tags.join(' / ')}</p>
-      {
-        (writeup || github) && (
-          <div class="links">
-            {writeup && (
-              <a class="btn solid" href={writeup}>
-                READ MY FULL WRITEUP ↗
-              </a>
-            )}
-            {github && (
-              <a class="btn" href={github}>
-                SOURCE ON GITHUB ↗
-              </a>
-            )}
+
+<Sheet title={`${d.title} | Benjamin Tran-Pugh`} description={d.summary}>
+  <main class="desk">
+    <div class="rig">
+      <Frame zones={8} ornaments>
+        <div class="topbar">
+          <a class="back" href="/">← ALL DRAWINGS</a>
+          <div class="contacts">
+            <a href="mailto:benjamintranpugh@gmail.com">benjamintranpugh@gmail.com</a>
+            <a href="mailto:btranpug@uwaterloo.ca">btranpug@uwaterloo.ca</a>
+            <a href="https://github.com/BenjaminTP">github.com/BenjaminTP</a>
+            <a href="/resume/">Resume →</a>
           </div>
-        )
-      }
-      {
-        writeup && (
-          <p class="linknote mono-label">
-            I WROTE IT MYSELF: EVERY DERIVATION, PARAMETER CHOICE, AND TEST CASE AT FULL
-            LENGTH. THE REPO IS THE CODE BEHIND IT.
-          </p>
-        )
-      }
-    </header>
+        </div>
 
-    <article class="prose">
-      <Content components={{ Figure, Compare, Sim, Stats, YouTube }} />
-    </article>
+        <div class="title-block">
+          <div class="tb-main">
+            <div class="tb-ids">
+              <span class="code">{id.code}</span>
+              <span class="sheet-no">SHEET {id.sheet} / {date}</span>
+            </div>
+            <h1>{d.title}</h1>
+            <p class="intro">{d.summary}</p>
+          </div>
+          <div class="tb-side">
+            <div class="status">
+              <div class="mono">STATUS</div>
+              <div class="status-v">
+                {status.map((s) => <div class={FAIL.test(s) ? 'bad' : ''}>{s}</div>)}
+              </div>
+            </div>
+            <div class="side-links">
+              {d.writeup && <a href={d.writeup}>FULL REPORT ↗</a>}
+              {d.github && <a href={d.github}>SOURCE ↗</a>}
+              {d.related && <a href={d.related.href}>{d.related.label}</a>}
+            </div>
+          </div>
+        </div>
 
-    <Gallery slug={project.id} exclude={inlineMedia} />
+        <div class="hero">
+          <div class="well" data-zoom={d.cover} data-cap={d.heroLabel}>
+            <Media src={d.cover} alt={d.heroLabel} poster={d.heroPoster} mode="fit" />
+            <span class="cm tl" aria-hidden="true"></span>
+            <span class="cm tr" aria-hidden="true"></span>
+            <span class="cm bl" aria-hidden="true"></span>
+            <span class="cm br" aria-hidden="true"></span>
+            <span class="datum" aria-hidden="true">
+              <span class="tri"></span>
+              <span class="box">A</span>
+            </span>
+            <div class="stamp-slot"><Stamp sheet={id.stamp} /></div>
+          </div>
+          <div class="hero-cap">
+            <span>GENERAL VIEW / {d.heroLabel}</span>
+            <span class="nts">NTS</span>
+          </div>
+        </div>
 
-    <nav class="pn" aria-label="Project navigation">
-      {prev ? <a class="btn" href={`/projects/${prev.id}/`}>← {prev.data.title.toUpperCase()}</a> : <span></span>}
-      {next ? <a class="btn" href={`/projects/${next.id}/`}>{next.data.title.toUpperCase()} →</a> : <span></span>}
-    </nav>
+        <article class="prose">
+          <Content components={{ Figure, Compare, Sim, Stats, YouTube }} />
+        </article>
+
+        <div class="deeper">
+          <div class="tools-cell">
+            <div class="mono">TOOLS &amp; METHODS</div>
+            <div class="chips">{tools.map((t) => <span class="chip">{t}</span>)}</div>
+          </div>
+          {
+            d.writeup && (
+              <div class="go-cell">
+                <div class="mono">GO DEEPER</div>
+                <a class="go" href={d.writeup}>
+                  <span>FULL REPORT</span>
+                  <span>↗</span>
+                </a>
+              </div>
+            )
+          }
+        </div>
+
+        <div class="foot">
+          <div class="foot-by">
+            <div class="mono">DRAWN BY</div>
+            <div class="by-row">
+              <span class="name">Benjamin Tran-Pugh</span>
+              <a href="https://linkedin.com/in/benjamin-tran-pugh">
+                linkedin.com/in/benjamin&#8209;tran&#8209;pugh
+              </a>
+            </div>
+            <div class="tol">
+              DIMENSIONS IN MM / TOLERANCES ±0.5 UNLESS NOTED / DO NOT SCALE DRAWING
+            </div>
+          </div>
+          <div class="foot-proj"><Projection stacked /></div>
+          <a class="foot-back" href="/">← ALL DRAWINGS</a>
+          <a class="foot-next" href={`/projects/${next.id}/`}>
+            <span class="mono">CONTINUED ON SHEET {nextId.n}</span>
+            <span class="next-t">
+              <span>{next.data.title.toUpperCase()}</span>
+              <span>→</span>
+            </span>
+          </a>
+        </div>
+      </Frame>
+      <Lightbox />
+    </div>
   </main>
-</Base>
+</Sheet>
 
 <style>
-  /* narrower, centered reading column (overrides .wrap's site-wide width) */
-  main { max-width: 48rem; }
-  article.prose { max-width: none; }
-  .head { padding-top: 1.8rem; border-bottom: 1px solid var(--line); padding-bottom: 1.4rem; }
-  .back { color: var(--muted); text-decoration: none; }
-  .back:hover { color: var(--accent); }
-  h1 { font-size: clamp(2.4rem, 7vw, 4.8rem); margin: 0.8rem 0 0.9rem; }
-  .tele { color: var(--accent); margin: 0 0 0.5rem; }
-  .meta { color: var(--muted); margin: 0; }
-  .links { display: flex; gap: 0.7rem; flex-wrap: wrap; margin-top: 1.1rem; }
-  .linknote { color: var(--muted); margin: 0.7rem 0 0; max-width: 34rem; line-height: 1.7; }
-  .prose { padding-top: 0.6rem; }
-  .pn {
+  .desk { min-height: 100vh; display: flex; justify-content: center; padding: 34px 20px 60px; }
+  .rig { width: min(1180px, 100%); }
+
+  .topbar {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    border-top: 1px solid var(--line);
-    margin-top: 2.5rem;
-    padding-top: 1.2rem;
+    gap: 20px;
+    padding: 11px 20px;
+    border-bottom: 1px solid var(--ink);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+  }
+  .back { font-weight: 500; letter-spacing: 0.12em; }
+  .back span { color: var(--label); }
+  .contacts { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+
+  .title-block { display: flex; border-bottom: 1px solid var(--ink); }
+  .tb-main { flex: 1; padding: 22px 20px 20px; border-right: 1px solid var(--ink); min-width: 0; }
+  .tb-ids { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .code { font-family: var(--font-mono); font-weight: 500; font-size: 12px; letter-spacing: 0.16em; color: var(--red); }
+  .sheet-no { font-family: var(--font-mono); font-weight: 500; font-size: 10px; letter-spacing: 0.14em; color: var(--label); }
+  h1 { margin: 12px 0 0; font-size: 38px; line-height: 1.02; letter-spacing: -0.02em; color: var(--ink); text-wrap: balance; }
+  .intro { margin: 13px 0 0; max-width: 660px; font-size: 15px; line-height: 1.6; color: var(--body); text-wrap: pretty; }
+
+  .tb-side { width: 300px; flex: none; display: flex; flex-direction: column; }
+  .status { flex: 1; padding: 14px 16px; border-bottom: 1px solid var(--frame); }
+  .status-v { font-family: var(--font-mono); font-weight: 500; font-size: 13px; line-height: 1.45; color: var(--ink); }
+  .status-v .bad { color: var(--red); }
+  .side-links { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .side-links a { font-family: var(--font-mono); font-weight: 500; font-size: 11px; line-height: 1.5; letter-spacing: 0.08em; }
+
+  .hero { border-bottom: 1px solid var(--ink); }
+  .hero .well { position: relative; height: var(--hero-h); background: var(--well); }
+  .hero-cap {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid var(--ink);
+    background: var(--fill-1);
+    padding: 10px 20px 11px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+  }
+  .nts { font-weight: 400; font-size: 9.5px; letter-spacing: 0.12em; color: var(--label); }
+  .stamp-slot { position: absolute; right: 26px; bottom: 22px; }
+  .cm {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background:
+      linear-gradient(var(--ink), var(--ink)) center / 1.5px 100% no-repeat,
+      linear-gradient(var(--ink), var(--ink)) center / 100% 1.5px no-repeat;
+  }
+  .cm.tl { left: 6px; top: 6px; }
+  .cm.tr { right: 6px; top: 6px; }
+  .cm.bl { left: 6px; bottom: 6px; }
+  .cm.br { right: 6px; bottom: 6px; }
+  .datum { position: absolute; left: 30px; bottom: 10px; display: flex; align-items: center; }
+  .datum .tri {
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 9px solid var(--ink);
+  }
+  .datum .box {
+    margin-left: 4px;
+    display: flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--font-mono); font-weight: 600; font-size: 9.5px; color: var(--ink);
+  }
+
+  .prose { padding: 4px 20px 26px; border-bottom: 1px solid var(--ink); }
+
+  .deeper { display: flex; border-bottom: 1px solid var(--ink); }
+  .tools-cell { flex: 1; padding: 16px 20px 18px; border-right: 1px solid var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .go-cell { width: 470px; flex: none; padding: 16px 20px 18px; }
+  .deeper .mono { margin-bottom: 10px; font-size: 10px; }
+  .go {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    border: 1.5px solid var(--ink); background: var(--fill-2);
+    padding: 12px 14px;
+    font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.1em;
+  }
+
+  .foot { display: flex; align-items: stretch; }
+  .foot-by { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 12px 20px; border-right: 1px solid var(--frame); }
+  .by-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .by-row .name { font-size: 16px; font-weight: 600; color: var(--ink); }
+  .by-row a { font-family: var(--font-mono); font-size: 10.5px; }
+  .foot .tol {
+    margin-top: 3px;
+    font-family: var(--font-mono); font-weight: 500; font-size: 8.5px;
+    line-height: 1.5; letter-spacing: 0.1em; color: var(--label);
+  }
+  .foot-proj { display: flex; align-items: center; padding: 12px 16px; border-right: 1px solid var(--frame); }
+  .foot-back {
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding: 12px 18px;
+    border-right: 1px solid var(--frame);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    white-space: nowrap;
+  }
+  .foot-next {
+    width: 330px; flex: none;
+    display: flex; flex-direction: column; justify-content: center; gap: 5px;
+    padding: 12px 18px; background: var(--fill-2);
+  }
+  .next-t {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    font-family: var(--font-mono); font-weight: 500; font-size: 12.5px; line-height: 1.3;
+    letter-spacing: 0.06em; color: var(--ink);
+  }
+
+  @media (max-width: 900px) {
+    .go-cell { width: 340px; }
+    .foot-next { width: 260px; }
+  }
+  @media (max-width: 768px) {
+    .desk { padding: 0; }
+    .topbar { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .contacts { gap: 12px; font-size: 10px; }
+    .title-block { flex-direction: column; }
+    .tb-main { border-right: 0; border-bottom: 1px solid var(--ink); padding: 18px 16px; }
+    h1 { font-size: 30px; }
+    .tb-side { width: auto; }
+    .hero .well { height: 300px; }
+    .stamp-slot { right: 12px; bottom: 12px; transform: scale(0.8); transform-origin: bottom right; }
+    .hero-cap { flex-direction: column; gap: 4px; padding: 9px 16px 10px; }
+    .prose { padding: 4px 16px 22px; }
+    .deeper { flex-direction: column; }
+    .tools-cell { border-right: 0; border-bottom: 1px solid var(--ink); }
+    .go-cell { width: auto; }
+    .foot { flex-direction: column; }
+    .foot-by, .foot-proj, .foot-back { border-right: 0; border-bottom: 1px solid var(--frame); }
+    .foot-next { width: auto; min-height: 60px; }
   }
 </style>

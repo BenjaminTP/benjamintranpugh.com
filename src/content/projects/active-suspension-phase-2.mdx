@@ -8,7 +8,12 @@ tags: [SolidWorks, 3D Printing, Direct-Drive Motor, IMU, Hardware, Aug 2026]
 cover: active-suspension-phase-2/hero.mp4
 github: https://github.com/BenjaminTP/Active_Suspension_Project
 writeup: https://github.com/BenjaminTP/Active_Suspension_Project/blob/main/Phase_2_Writeup.md
+short: SUSPENSION 2
+heroLabel: "THE RIG RUNNING / 3 HZ ROAD, DROP TEST, PUSH DOWN AND PULL UP"
+related: { href: /projects/active-suspension/, label: "PHASE 1 (SIMULATION) →" }
+indexFigures: [active-suspension-phase-2/cad-render.png, active-suspension-phase-2/built-rig.png]
 ---
+
 
 ## Overview
 
@@ -60,7 +65,6 @@ Then I measured the sag from the top of the travel versus the bottom and got a 1
 
 On a rig this small, those friction and cogging forces land on the same order as the suspension forces themselves. That overdamps the system, and skyhook has nothing to do on an overdamped plant (phase 1 covers why). A drop test, a hold-and-release, and a 3 Hz road all showed textbook overdamped behavior: the body eases back to rest with no overshoot, no oscillation for the controller to cancel.
 
-Actuator off in all three, showing the passive rig moving:
 
 <Compare cols={3}>
   <Figure src="active-suspension-phase-2/rig-3hz-road.mp4" autoplay caption="3 HZ ROAD / SERVO-DRIVEN CRANK" />

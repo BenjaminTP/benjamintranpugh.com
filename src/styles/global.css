@@ -1,16 +1,10 @@
 /* ============================================================
-   GLOBAL STYLES: fonts, base elements, shared utility classes.
+   GLOBAL STYLES: fonts, base elements, and the shared drawing
+   vocabulary (figures, furniture, rich content blocks).
    Design values come from tokens.css; do not hardcode them here.
    Page-specific layout lives scoped inside each .astro file.
    ============================================================ */
 
-@font-face {
-  font-family: 'Anton';
-  src: url('/fonts/anton.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
 @font-face {
   font-family: 'Archivo';
   src: url('/fonts/archivo-var.woff2') format('woff2');
@@ -32,214 +26,324 @@
   font-style: normal;
   font-display: swap;
 }
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('/fonts/plex-mono-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* ---------- base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-
 html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
 body {
   margin: 0;
-  background-color: var(--bg);
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: var(--grid-size) var(--grid-size);
+  background: var(--desk);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 15.5px;
   line-height: 1.6;
 }
 
-img { max-width: 100%; display: block; }
+img, video { max-width: 100%; display: block; }
+h1, h2, h3, h4 { line-height: 1.15; margin: 0; font-weight: 600; }
+a { color: var(--ink); text-decoration: none; }
+a:hover { color: var(--red); }
+:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
-a { color: inherit; }
-a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-h1, h2, h3, h4 { line-height: 1.15; margin: 0; }
-
-/* ---------- shared utilities ---------- */
-.wrap {
-  max-width: var(--wrap);
-  margin: 0 auto;
-  padding-left: var(--pad);
-  padding-right: var(--pad);
-}
-
-/* Anton display type: big headline moments */
-.display {
-  font-family: var(--font-display);
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.005em;
-  line-height: 0.94;
-}
-
-/* small monospace label: nav, telemetry, captions, tags */
-.mono-label {
+/* ---------- shared type roles ---------- */
+.mono {
   font-family: var(--font-mono);
   font-weight: 500;
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
+  font-size: 9px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
+  color: var(--label);
 }
-
-/* bordered mono button-link */
-.btn {
-  display: inline-block;
+.code {
   font-family: var(--font-mono);
   font-weight: 500;
-  font-size: 0.7rem;
+  font-size: 11.5px;
+  letter-spacing: 0.16em;
+  color: var(--red);
+}
+
+/* ---------- chips ---------- */
+.chip {
+  padding: 5px 9px;
+  border: 1px solid var(--frame);
+  background: var(--fill-2);
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 10.5px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* ---------- figures (shared by index and project pages) ---------- */
+.fig {
+  margin: 0;
+  border: 1px solid var(--frame);
+  background: var(--well);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.fig .well { position: relative; flex: 1; min-height: 0; }
+
+/* Media owns its own sizing so it can never overflow its frame.
+   `natural` keeps the file's aspect and drives the well height, which is what
+   kills the dead space around project-page figures. `fit` letterboxes into a
+   well whose height is already fixed (index cells, heroes). */
+.media { display: block; background: var(--well); }
+.media.natural { width: 100%; height: auto; }
+.media.fit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.fig figcaption {
+  border-top: 1px solid var(--hair);
+  background: var(--fill-1);
+  padding: 8px 12px 9px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 9.5px;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+/* balloon number */
+.balloon {
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+}
+.balloon::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--fill-3);
+  transform: scale(var(--on, 0));
+  transition: transform var(--t-fade-out) var(--spring);
+}
+.balloon span {
+  position: relative;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 10.5px;
+  color: var(--ink);
+}
+
+/* hatched fallback when a media file is missing or fails to load */
+.hatch {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(
+    45deg, var(--fill-1) 0 10px, var(--paper) 10px 20px
+  );
+}
+.hatch span {
+  max-width: 240px;
+  text-align: center;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 10.5px;
+  line-height: 1.7;
   letter-spacing: 0.1em;
   color: var(--ink);
-  text-decoration: none;
-  border: 1px solid var(--line);
-  padding: 0.55rem 0.9rem;
-  transition: border-color 0.15s, color 0.15s;
-}
-.btn:hover, .btn:focus-visible { border-color: var(--accent); color: var(--accent); }
-.btn.solid { background: var(--accent); border-color: var(--accent); color: var(--bg); }
-.btn.solid:hover, .btn.solid:focus-visible { background: transparent; color: var(--accent); }
-
-/* hatched placeholder: shown wherever an image is missing */
-.ph {
-  border: 1px solid var(--line);
-  background: repeating-linear-gradient(
-    45deg, transparent 0 9px, rgba(233, 232, 227, 0.05) 9px 10px
-  );
-  display: flex;
-  align-items: flex-end;
-  padding: 0.7rem;
-  min-height: 4rem;
-}
-.ph span {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 0.58rem;
-  letter-spacing: 0.1em;
-  color: var(--muted);
-  background: var(--panel);
-  border: 1px solid var(--line);
-  padding: 0.25rem 0.45rem;
+  background: rgba(251, 252, 254, 0.92);
+  border: 1px solid var(--frame);
 }
 
 /* ---------- prose (project page bodies) ---------- */
-.prose { max-width: 44rem; }
-.prose p { color: var(--muted); font-size: 0.97rem; line-height: 1.7; }
-.prose strong { color: var(--ink); }
+/* Two counters run the whole sheet: `fig` numbers every balloon in document
+   order, `zone` letters each section. zone starts at 1 so the first heading
+   is B, leaving A for the hero above. */
+.prose { counter-reset: fig zone 1; }
+.prose .balloon .num::before {
+  counter-increment: fig;
+  content: counter(fig, decimal-leading-zero);
+}
+
 .prose h2 {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 26px 0 14px;
   font-family: var(--font-mono);
   font-weight: 500;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
+  font-size: 11px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--accent);
-  border-top: 1px solid var(--line);
-  padding-top: 1.1rem;
-  margin-top: 2.2rem;
+  color: var(--label);
+  clear: both;
 }
-.prose h3 { font-size: 1.1rem; font-weight: 700; margin-top: 1.6rem; }
-.prose ul { color: var(--muted); padding-left: 1.2rem; }
-.prose li { margin: 0.35rem 0; line-height: 1.6; }
-.prose li::marker { color: var(--accent); }
-.prose a { color: var(--ink); text-decoration-color: var(--accent); }
-.prose a:hover { color: var(--accent); }
+.prose h2::before {
+  counter-increment: zone;
+  content: counter(zone, upper-alpha);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  border: 1.5px solid var(--ink);
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--ink);
+  flex: none;
+}
+.prose h2::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--frame) 0 5px, transparent 5px 10px);
+}
+
+.prose p {
+  color: var(--body);
+  font-size: 15px;
+  line-height: 1.62;
+  text-wrap: pretty;
+  margin: 0 0 14px;
+}
+.prose strong { color: var(--ink); font-weight: 600; }
+.prose ul { color: var(--body); padding-left: 18px; margin: 0 0 14px; }
+.prose li { margin: 4px 0; }
+.prose li::marker { color: var(--red); }
+.prose a { text-decoration: underline; text-decoration-color: var(--frame); }
+.prose h3 {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 22px 0 10px;
+}
 .prose code {
   font-family: var(--font-mono);
-  font-size: 0.85em;
-  background: var(--panel);
-  border: 1px solid var(--line);
+  font-size: 0.86em;
+  background: var(--fill-1);
+  border: 1px solid var(--hair);
   padding: 0.1em 0.35em;
 }
 
-/* code / equation blocks: monochrome, so amber stays the only accent */
-.prose pre {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--accent);
-  padding: 0.9rem 1rem;
-  margin: 1.4rem 0;
+/* rich blocks share one well treatment, labelled in the corner */
+.well-block {
+  position: relative;
+  border: 1px solid var(--frame);
+  background: var(--well);
+  margin: 18px 0;
+  padding: 22px 16px 14px;
   overflow-x: auto;
-  clear: both;
+}
+.well-block > .tag {
+  position: absolute;
+  left: 12px;
+  top: 7px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 8.5px;
+  letter-spacing: 0.18em;
+  color: var(--label);
+}
+
+/* code listings */
+.prose pre {
+  margin: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  overflow-x: auto;
 }
 .prose pre code {
   background: none;
   border: 0;
   padding: 0;
-  font-size: 0.78rem;
+  font-size: 12.5px;
   line-height: 1.75;
   color: var(--ink);
 }
 
-/* typeset math (MathJax SVG, rendered at build time).
-   Display equations sit in the same framed block as code so the page keeps
-   one visual rhythm; inline math just picks up the surrounding text color. */
+/* typeset math: MathJax injects its own stylesheet into the body, so it
+   lands after this file and wins any specificity tie. Matching [jax] too
+   outranks its `text-align:center; margin:1em 0` default. */
 .prose mjx-container { color: var(--ink); }
-/* MathJax injects its own stylesheet into the body, so it lands after this
-   file and wins any specificity tie. Matching [jax] too outranks its
-   `text-align:center; margin:1em 0` default instead of relying on order. */
-.prose mjx-container[jax="SVG"][display="true"] {
+.prose mjx-container[jax='SVG'][display='true'] {
   display: block;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-left: 2px solid var(--accent);
-  padding: 1.1rem 1.2rem;
-  margin: 1.4rem 0;
+  text-align: left;
+  margin: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  text-align: left;
-  clear: both;
 }
-.prose mjx-container[jax="SVG"][display="true"] > svg { margin: 0; }
 
-/* data tables: hairlines only, mono figures */
+/* data tables, styled like a title block */
 .prose table {
-  /* block + max-content lets wide tables scroll themselves instead of
-     forcing the page to scroll sideways on a phone */
   display: block;
   width: max-content;
   max-width: 100%;
   overflow-x: auto;
   border-collapse: collapse;
-  margin: 1.4rem 0;
-  font-size: 0.8rem;
-  clear: both;
+  margin: 18px 0;
+  font-size: 13px;
 }
-.prose th, .prose td {
-  border-bottom: 1px solid var(--line);
-  padding: 0.5rem 0.7rem 0.5rem 0;
-  text-align: left;
-  vertical-align: top;
-}
+.prose thead { background: var(--fill-1); }
 .prose th {
+  border-bottom: 1px solid var(--ink);
+  padding: 8px 14px 8px 10px;
+  text-align: left;
   font-family: var(--font-mono);
   font-weight: 500;
-  font-size: 0.6rem;
-  letter-spacing: 0.12em;
+  font-size: 9px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--label);
   white-space: nowrap;
 }
-.prose td { color: var(--muted); }
-.prose td:first-child { color: var(--ink); }
-.prose tbody td:not(:first-child) { font-family: var(--font-mono); font-size: 0.75rem; }
-
-/* figures placed by <Figure/> in project bodies */
-.fig { margin: 1.4rem 0; }
-.fig img, .fig video { border: 1px solid var(--line); width: 100%; display: block; background: var(--panel-2); }
-.fig figcaption {
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  padding-top: 0.55rem;
+.prose td {
+  border-bottom: 1px solid var(--frame);
+  padding: 8px 14px 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  color: var(--body);
 }
-.fig-full { width: 100%; clear: both; }
-.fig-left  { float: left;  width: min(46%, 19rem); margin: 0.3rem 1.4rem 0.9rem 0; }
-.fig-right { float: right; width: min(46%, 19rem); margin: 0.3rem 0 0.9rem 1.4rem; }
-.prose::after { content: ''; display: block; clear: both; }
-@media (max-width: 640px) {
-  .fig-left, .fig-right { float: none; width: 100%; margin: 1.4rem 0; }
+.prose td:first-child { color: var(--ink); }
+.prose tbody td:not(:first-child) {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+/* AI-assist attribution: textual, dashed box, never a badge */
+.attrib {
+  border: 1px dashed var(--frame);
+  background: var(--fill-1);
+  padding: 11px 14px;
+  margin: 18px 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .balloon::before { transition: none; }
 }

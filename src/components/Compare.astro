@@ -1,30 +1,26 @@
 ---
 /**
- * Side-by-side row of <Figure> elements; equal columns, stacks on narrow
- * screens. Defaults to 2 columns (before/after); pass cols for more.
- *
- *   <Compare cols={3}>
- *     <Figure src="slug/a.mp4" autoplay caption="A" />
- *     ...
- *   </Compare>
+ * A set of figures that must be read together (before/after, a run of tests).
+ * The set goes full width and the prose sits below it, per the sheet spec.
+ * Defaults to 2 columns; pass cols for more.
  */
 const { cols = 2 } = Astro.props;
 ---
-<div class="compare" style={`--cols: ${cols}`}>
+<div class="set" style={`--cols:${cols}`}>
   <slot />
 </div>
 
 <style>
-  .compare {
+  .set {
     display: grid;
     grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-    gap: 1rem;
+    gap: 14px;
     clear: both;
-    margin: 1.4rem 0;
+    margin: 18px 0;
   }
-  /* the child <Figure> elements bring their own margins, so drop them here */
-  .compare :global(.fig) { margin: 0; width: 100%; float: none; }
-  @media (max-width: 640px) {
-    .compare { grid-template-columns: 1fr; }
+  /* children bring their own margins and floats; neutralise both here */
+  .set :global(.fig) { margin: 0; width: 100%; float: none; }
+  @media (max-width: 768px) {
+    .set { grid-template-columns: 1fr; }
   }
 </style>

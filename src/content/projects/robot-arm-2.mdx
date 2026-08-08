@@ -7,7 +7,11 @@ telemetry: "DOF:4 | IK:FULL | MCU:ESP32"
 tags: [SolidWorks, FEA, C++, Python, MATLAB, ESP32, Nov-Dec 2025]
 cover: robot-arm-2/live.png
 github: https://github.com/BenjaminTP/ROBOT_ARM
+short: ROBOT ARM 2
+heroLabel: "THE BUILT ARM"
+indexFigures: [robot-arm-2/cad.jpg, robot-arm-2/orbit.mp4]
 ---
+
 
 ## Overview
 
@@ -19,13 +23,19 @@ The goal: a functioning 4-DOF robot arm with full inverse kinematics, smooth mot
 
 I started by researching the math behind inverse kinematics and robotic motion, then modeled the full arm in SolidWorks around accurate models of off-the-shelf components.
 
-<Figure src="robot-arm-2/cad.jpg" align="right" caption="SOLIDWORKS ASSEMBLY" />
+<Figure src="robot-arm-2/cad.jpg" caption="SOLIDWORKS ASSEMBLY" />
+
+<Figure src="robot-arm-2/exploded.png" caption="EXPLODED VIEW" />
+
+<Figure src="robot-arm-2/orbit.mp4" autoplay caption="CAD ORBIT / SOLIDWORKS" />
 
 Before ordering anything, I ran FEA on the structure to confirm it could handle the loads.
 
+<Figure src="robot-arm-2/fea.png" caption="FEA / STRUCTURAL VALIDATION BEFORE BUYING PARTS" />
+
 I prototyped the inverse kinematics solution in Python and MATLAB first, where iterating is fast, then ported it to C++ for deployment.
 
-<Figure src="robot-arm-2/fea.png" caption="FEA / STRUCTURAL VALIDATION BEFORE BUYING PARTS" />
+<Figure src="robot-arm-2/code.png" caption="IK SOLVER CODE" />
 
 ## Build
 
@@ -36,3 +46,5 @@ The final system runs on an ESP32 driving servo motors through a PCA9685 driver 
 ## Result
 
 A working arm with full inverse kinematics, smooth controlled motion, and positional memory, controllable from any device on the network. All of it is running in the demo video at the top of this page.
+
+<Figure src="robot-arm-2/heart-trajectory.png" caption="HEART TRAJECTORY / TRACED PATH" />

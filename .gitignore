@@ -13,3 +13,6 @@ README.md
 
 # generated resume preview (built from public/resume.pdf)
 resume-page-*.png
+
+# design handoff references, local only
+design-reference/

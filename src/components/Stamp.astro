@@ -1,0 +1,45 @@
+---
+/** NOT FOR CONSTRUCTION stamp. One per sheet. Never overlaps text. */
+interface Props { sheet: string; small?: boolean }
+const { sheet, small = false } = Astro.props;
+---
+<div class={`stamp${small ? ' sm' : ''}`} aria-hidden="true">
+  <div class="inner">
+    <div class="head">NOT FOR CONSTRUCTION</div>
+    <div class="sub">PORTFOLIO ISSUE / {sheet}</div>
+  </div>
+</div>
+
+<style>
+  .stamp {
+    flex: none;
+    transform: rotate(-3deg);
+    border: 2px solid rgba(176, 59, 46, 0.75);
+    padding: 2.5px;
+    background: rgba(251, 252, 254, 0.94);
+  }
+  .inner {
+    border: 1px solid rgba(176, 59, 46, 0.75);
+    padding: 6px 12px;
+    text-align: center;
+  }
+  .head {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    color: rgba(176, 59, 46, 0.85);
+  }
+  .sub {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    color: rgba(176, 59, 46, 0.7);
+  }
+  .sm { border-width: 1.5px; }
+  .sm .inner { padding: 5px 9px; }
+  .sm .head { font-size: 9px; letter-spacing: 0.14em; }
+  .sm .sub { display: none; }
+</style>
