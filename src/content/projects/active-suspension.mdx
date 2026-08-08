@@ -19,16 +19,9 @@ indexFigures: [active-suspension/animation-class-c.mp4, active-suspension/classc
 
 I built a quarter-car suspension model from scratch to answer one question: how much ride comfort can an actuator buy you over a passive spring and damper? Comfort is measured as RMS body acceleration, so that is the number I optimized and the number I report.
 
-Skyhook control cut it on every road I tested:
+Skyhook control cut it on every road I tested.
 
-<Stats items={[
-  { value: "-9.6%",  label: "CLASS-C ROAD / 100 KM/H" },
-  { value: "-12.3%", label: "5 CM BUMP" },
-  { value: "-37.6%", label: "8 CM BODY DROP" },
-  { value: "-57.1%", label: "RESONANCE ROAD" }
-]} note="RMS BODY ACCELERATION, PASSIVE VS SKYHOOK, IDENTICAL ROADS AND INITIAL CONDITIONS" />
-
-Everything below is Phase 1: derivation, parameter selection, control law, road generation, and a test bench. Phase 2 adds preview control and a physical model.
+Phase 1 consists of: derivation, parameter selection, control law, road generation, and a test bench. Phase 2 adds a physical model.
 
 ## The model
 
@@ -138,7 +131,7 @@ Each wave gets a random phase $\phi_i$, because waves left in sync produce an ar
 
 ## Test bench
 
-Lowering RMS acceleration is easy if you ignore what it costs. The bench therefore logs the three quantities that size real hardware alongside comfort: peak suspension travel $\max|x_2-x_1|$, peak tire deflection $\max|x_1-x_r|$, and peak actuator force.
+Lowering RMS acceleration is easy if you ignore what it costs. The bench therefore logs the three quantities that size real hardware alongside comfort: peak suspension travel, peak tire deflection, and peak actuator force.
 
 <Compare>
   <Figure src="active-suspension/classc-passive.png" caption="CLASS-C ROAD / PASSIVE / RMS 1.675 M/S²" />
@@ -180,6 +173,6 @@ This is an interactive version of the same model: draw a road profile in the low
 
 ## What is next
 
-Phase 1 only implements skyhook. Phase 2 puts preview control on top of it, feeding the road ahead of the wheel into the actuator command, and moves the model onto physical hardware.
+Phase 1 only implements skyhook. Phase 2 gives the theory a body.
 
 This page is the summary. I wrote a [full Phase 1 writeup](https://github.com/BenjaminTP/Active-Suspension-Project/blob/main/phase1_writeup.md) that carries every step at length: the equations of motion derived line by line, why each parameter was chosen and checked against Gillespie, the complete ISO 8608 and variance derivations, and all eight benchmark cases with their plots. If you want to see how I actually work through a problem, read that.
