@@ -1,0 +1,171 @@
+---
+/**
+ * Detail view, the way a drawing pulls one off a parent view. Click an image
+ * on a pointer device and a circular bubble follows the cursor at 2:1: a
+ * dashed circle marks the region on the image itself, a dashed leader runs
+ * from it to the bubble, and the bubble is labelled DETAIL A.
+ *
+ * Click again, move off the image, scroll, or press Escape to drop it.
+ * Pointer-only: on a phone the figure card expands or the lightbox opens
+ * instead, so this stays out of the way there.
+ */
+---
+
+<div class="det" hidden aria-hidden="true">
+  <svg class="link"><line /></svg>
+  <span class="mark"><span class="letter">A</span></span>
+  <span class="lens"><span class="cap">DETAIL A / SCALE 2:1</span></span>
+</div>
+
+<style>
+  .det {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    pointer-events: none;
+  }
+  .det[hidden] { display: none; }
+  .link { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .link line { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 4 3; }
+
+  /* the region being looked at, drawn on the image */
+  .mark {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px dashed var(--ink);
+    transform: translate(-50%, -50%);
+  }
+  .letter {
+    position: absolute;
+    left: calc(100% - 4px);
+    bottom: calc(100% - 4px);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--red);
+  }
+
+  /* the detail itself: paper ring so it reads as pulled off the sheet */
+  .lens {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px dashed var(--ink);
+    background-color: var(--well);
+    background-repeat: no-repeat;
+    box-shadow: 0 0 0 5px var(--paper), 0 3px 14px rgba(18, 50, 94, 0.18);
+    transform: translate(-50%, -50%);
+  }
+  .cap {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    border: 1px solid var(--frame);
+    background: var(--paper);
+    padding: 4px 8px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+  }
+</style>
+
+<script>
+  const FINE = window.matchMedia('(hover: hover) and (min-width: 769px)');
+  const Z = 2; // 2:1, and the label says so
+  const D = 208; // bubble diameter
+  const R = D / 2;
+  const SRC = D / Z / 2; // radius of the region it samples
+
+  const box = document.querySelector<HTMLElement>('.det')!;
+  const lens = box.querySelector<HTMLElement>('.lens')!;
+  const mark = box.querySelector<HTMLElement>('.mark')!;
+  const line = box.querySelector<SVGLineElement>('line')!;
+  lens.style.width = lens.style.height = `${D}px`;
+  mark.style.width = mark.style.height = `${SRC * 2}px`;
+
+  let img: HTMLImageElement | null = null;
+
+  const clamp = (v: number, lo: number, hi: number) =>
+    lo > hi ? (lo + hi) / 2 : Math.min(Math.max(v, lo), hi);
+
+  function off() {
+    img?.classList.remove('det-live');
+    img = null;
+    box.hidden = true;
+  }
+
+  function paint(x: number, y: number) {
+    if (!img) return;
+    // the painted rect, not the element box: fit media is letterboxed
+    const r = img.getBoundingClientRect();
+    const nat = img.naturalWidth / img.naturalHeight;
+    const w = Math.min(r.width, r.height * nat);
+    const h = Math.min(r.height, r.width / nat);
+    const l = r.left + (r.width - w) / 2;
+    const t = r.top + (r.height - h) / 2;
+
+    // keep the sampled region inside the image so the bubble is never half empty
+    const cx = clamp(x, l + SRC, l + w - SRC);
+    const cy = clamp(y, t + SRC, t + h - SRC);
+
+    // park the bubble off the cursor, flipping at the viewport edges
+    const gap = 172;
+    let lx = cx + gap;
+    let ly = cy - gap;
+    if (lx + R + 12 > innerWidth) lx = cx - gap;
+    if (ly - R - 12 < 0) ly = cy + gap;
+    lx = clamp(lx, R + 12, innerWidth - R - 12);
+    ly = clamp(ly, R + 12, innerHeight - R - 40);
+
+    mark.style.left = `${cx}px`;
+    mark.style.top = `${cy}px`;
+    lens.style.left = `${lx}px`;
+    lens.style.top = `${ly}px`;
+    lens.style.backgroundSize = `${w * Z}px ${h * Z}px`;
+    lens.style.backgroundPosition = `${R - (cx - l) * Z}px ${R - (cy - t) * Z}px`;
+
+    // leader from the edge of the mark to the edge of the bubble
+    const dx = lx - cx;
+    const dy = ly - cy;
+    const d = Math.hypot(dx, dy) || 1;
+    line.setAttribute('x1', String(cx + (dx / d) * SRC));
+    line.setAttribute('y1', String(cy + (dy / d) * SRC));
+    line.setAttribute('x2', String(lx - (dx / d) * (R + 5)));
+    line.setAttribute('y2', String(ly - (dy / d) * (R + 5)));
+  }
+
+  document.addEventListener('click', (e) => {
+    const hit = (e.target as HTMLElement)?.closest?.('img.media') as HTMLImageElement | null;
+    if (!FINE.matches || !hit || !hit.naturalWidth || hit === img) return off();
+    off();
+    img = hit;
+    hit.classList.add('det-live');
+    lens.style.backgroundImage = `url("${hit.currentSrc || hit.src}")`;
+    box.hidden = false;
+    paint(e.clientX, e.clientY);
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!img) return;
+    // leaving the well drops the detail, the same as clicking again. The well,
+    // not the image: the balloon and the caption overlay sit on top of it.
+    const well = (e.target as HTMLElement)?.closest?.('.well');
+    if (!well?.contains(img)) return off();
+    paint(e.clientX, e.clientY);
+  });
+
+  // a scroll or a resize moves the image out from under a fixed bubble
+  addEventListener('scroll', off, { passive: true });
+  addEventListener('wheel', off, { passive: true });
+  addEventListener('resize', off);
+  addEventListener('keydown', (e) => e.key === 'Escape' && off());
+</script>
+
+<style is:global>
+  /* crosshair while a detail is live, so the cursor reads as a probe */
+  img.det-live { cursor: crosshair; }
+</style>

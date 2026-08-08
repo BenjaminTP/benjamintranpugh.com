@@ -6,6 +6,7 @@ import Media from '../components/Media.astro';
 import Stamp from '../components/Stamp.astro';
 import Projection from '../components/Projection.astro';
 import Lightbox from '../components/Lightbox.astro';
+import Detail from '../components/Detail.astro';
 import Splash from '../components/Splash.astro';
 import { figuresOf, notesOf, sheetOf, toolsAndDate } from '../lib/sheet';
 
@@ -234,6 +235,7 @@ const first = sheets[0];
       }
 
       <Lightbox />
+      <Detail />
 
       <div class="tabs" role="tablist" aria-label="Project sheets">
         {

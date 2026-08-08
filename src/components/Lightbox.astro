@@ -112,10 +112,13 @@
     document.addEventListener('click', (e) => {
       const well = (e.target as HTMLElement)?.closest?.('[data-zoom]') as HTMLElement | null;
       if (!well) return;
+      const fine = window.matchMedia('(hover: hover) and (min-width: 769px)').matches;
       // on a phone the index cards expand their passage instead of zooming
-      if (well.closest('.cell') && !window.matchMedia('(hover: hover) and (min-width: 769px)').matches)
-        return;
+      if (well.closest('.cell') && !fine) return;
       const src = well.dataset.zoom!;
+      // on a pointer device an image gets the circular detail view instead;
+      // a video cannot be magnified in place, so it still opens full size
+      if (fine && !VIDEO.test(src)) return;
       const el = VIDEO.test(src)
         ? Object.assign(document.createElement('video'), {
             src: `/images/${src}`,
