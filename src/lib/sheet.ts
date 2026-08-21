@@ -176,6 +176,44 @@ export function notesOf(project: CollectionEntry<'projects'>): string[] {
   return notes;
 }
 
+/**
+ * Goal / method / outcome, for the print edition. Every one is a block of the
+ * MDX quoted verbatim, never a summary written about it:
+ *   goal    the opening paragraph, which is always what the project set out to do
+ *   method  the first section named for how it was made
+ *   outcome the section named for the result, or the body's last paragraph
+ * The summary is deliberately not the outcome fallback: the print edition
+ * already carries it as the headline, so it would print twice on one sheet.
+ * A project whose outcome reads wrong wants a `## Result` section in its MDX;
+ * do not write one here.
+ */
+export interface Brief {
+  goal: Passage | null;
+  method: Passage | null;
+  outcome: Passage | null;
+}
+const METHOD_H = /build|method|design|process|model/i;
+const RESULT_H = /result|outcome/i;
+
+export function briefOf(project: CollectionEntry<'projects'>): Brief {
+  const bl = blocks(project.body ?? '');
+  const headingAt = (rx: RegExp) => bl.findIndex((b) => b.kind === 'h' && rx.test(b.text));
+  const section = (i: number) => (i < 0 ? null : scan(bl, i + 1, 1));
+
+  const first = bl.find((b) => b.kind === 'p');
+  const last = (b: Block[]): Passage | null => {
+    const p = [...b].reverse().find((x) => x.kind === 'p');
+    return p ? { kind: 'p', items: [plain(p.text)] } : null;
+  };
+  const secondHeading = bl.findIndex((b, i) => b.kind === 'h' && i > 0);
+
+  return {
+    goal: first ? { kind: 'p', items: [plain(first.text)] } : null,
+    method: section(headingAt(METHOD_H)) ?? section(secondHeading),
+    outcome: section(headingAt(RESULT_H)) ?? last(bl),
+  };
+}
+
 /** Sheet identity derived from position: lowest order is sheet 01. */
 export function sheetOf(index: number, total: number) {
   const nn = String(index + 1).padStart(2, '0');

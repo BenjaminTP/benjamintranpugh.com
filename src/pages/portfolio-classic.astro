@@ -1,0 +1,198 @@
+---
+/**
+ * The plain print edition: the same six projects as the drawing set, laid out
+ * as an ordinary document so it reads as a second page of the resume rather
+ * than as a different object. Same header, same rule under each section
+ * heading, same bold-left / bold-right rows and bullets.
+ *
+ * scripts/render-portfolio.mjs prints this route to public/portfolio-classic.pdf.
+ * Content is the same MDX both other editions read, quoted verbatim.
+ */
+import Sheet from '../layouts/Sheet.astro';
+import { SITE, printed, printProjects } from '../lib/print';
+
+const projects = (await printProjects()).map((s) => ({
+  ...s,
+  points: [
+    { label: 'Goal', body: s.brief.goal },
+    { label: 'Method', body: s.brief.method },
+    { label: 'Outcome', body: s.brief.outcome },
+  ],
+}));
+
+const CONTACTS = [
+  { text: 'btranpug@uwaterloo.ca', href: 'mailto:btranpug@uwaterloo.ca' },
+  { text: 'linkedin.com/in/benjamin-tran-pugh', href: 'https://linkedin.com/in/benjamin-tran-pugh' },
+  { text: 'github.com/BenjaminTP', href: 'https://github.com/BenjaminTP' },
+  { text: SITE, href: `https://${SITE}/` },
+];
+---
+
+<Sheet
+  title="Portfolio | Benjamin Tran-Pugh"
+  description="Plain print edition of the project portfolio, to accompany the resume."
+>
+  <main class="doc">
+    <header class="masthead">
+      <h1>Benjamin Tran&#8209;Pugh</h1>
+      <p class="contacts">
+        {
+          CONTACTS.map((c, i) => (
+            <>
+              {i > 0 && <span class="sep"> | </span>}
+              <a href={c.href}>{c.text}</a>
+            </>
+          ))
+        }
+      </p>
+    </header>
+
+    <h2 class="section">Project Portfolio</h2>
+
+    {
+      projects.map((s) => (
+        <section class="proj">
+          <div class="lead">
+            <div class="line">
+              <span class="l strong">{s.d.title}</span>
+              <span class="r strong">{s.tools.join(', ')}</span>
+            </div>
+            <div class="line em">
+              <span class="l">{s.d.telemetry}</span>
+              <span class="r">{s.date}</span>
+            </div>
+            <p class="summary">{s.d.summary}</p>
+          </div>
+
+          <ul>
+            {s.points.map((pt) =>
+              pt.body?.kind === 'ul' ? (
+                <li>
+                  <strong>{pt.label}:</strong>{' '}
+                  {pt.body.items.join('; ')}
+                </li>
+              ) : (
+                <li>
+                  <strong>{pt.label}:</strong>{' '}
+                  {pt.body?.items.join(' ')}
+                </li>
+              )
+            )}
+          </ul>
+
+          <div class="shots">
+            <figure>
+              <img src={s.hero} alt={s.d.heroLabel} />
+              <figcaption>{s.d.heroLabel}</figcaption>
+            </figure>
+            {s.figs.map((f) => (
+              <figure>
+                <img src={printed(f.src)} alt={f.caption} />
+                <figcaption>{f.caption}</figcaption>
+              </figure>
+            ))}
+          </div>
+
+          <p class="more">
+            Full write-up and photos:{' '}
+            <a href={`https://${SITE}${s.path}`}>{`${SITE}${s.path}`}</a>
+          </p>
+        </section>
+      ))
+    }
+  </main>
+</Sheet>
+
+<style>
+  /* Resume-matching values, deliberately not site tokens: this document is a
+     companion to public/resume.pdf, so it borrows that page's black text and
+     hyperlink blue rather than the drawing sheets' ink and paper. */
+  .doc {
+    --doc-ink: #000000;
+    --doc-link: #0563c1;
+    --doc-quiet: #3f3f3f;
+    color: var(--doc-ink);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    line-height: 1.34;
+    background: #fff;
+  }
+
+  /* margins live on the page box, so the document simply flows and Chrome
+     paginates it: no fixed page heights to fight, unlike the drawing set */
+  @page { size: 8.5in 11in; margin: 0.55in 0.5in; }
+  /* the site paints the desk colour on body, which would otherwise show as a
+     grey band below the last entry */
+  :global(body) { background: #fff; }
+  @media screen {
+    .doc { max-width: 720px; margin: 0 auto; padding: 28px 0 60px; }
+  }
+
+  a { color: var(--doc-link); text-decoration: underline; }
+
+  /* ---------- masthead ---------- */
+  .masthead { text-align: center; }
+  .masthead h1 {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--doc-ink);
+  }
+  .contacts { margin: 7px 0 0; font-size: 13px; }
+  .contacts .sep { color: var(--doc-ink); }
+
+  /* the resume's section heading: caps, then a rule the full width */
+  .section {
+    margin: 18px 0 9px;
+    padding-bottom: 2px;
+    border-bottom: 1.2px solid var(--doc-ink);
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+
+  /* ---------- one project ---------- */
+  /* A project may run onto the next page: forbidding that leaves most of a
+     page blank, because the longest entry is over half a page on its own.
+     What must never split is a heading from the text under it, or a row of
+     figures from its captions. */
+  .proj { margin-bottom: 16px; }
+  .lead { break-inside: avoid; break-after: avoid; }
+  .line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 18px;
+  }
+  .line .l { min-width: 0; }
+  .line .r { flex: none; text-align: right; }
+  .strong { font-weight: 700; }
+  .em { font-style: italic; font-size: 13px; }
+
+  .summary { margin: 5px 0 0; }
+  ul { margin: 4px 0 0; padding-left: 19px; }
+  li { margin: 2px 0; }
+
+  /* ---------- figures ---------- */
+  /* figures stay with the text they belong to, rather than opening a page on
+     their own with no heading above them */
+  .shots { display: flex; gap: 9px; margin-top: 9px; break-inside: avoid; break-before: avoid; }
+  .shots figure { flex: 1; min-width: 0; margin: 0; }
+  .shots img {
+    width: 100%;
+    height: 116px;
+    object-fit: contain;
+    border: 1px solid #bfbfbf;
+    background: #fff;
+  }
+  .shots figcaption {
+    margin-top: 3px;
+    font-size: 9px;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+    color: var(--doc-quiet);
+  }
+
+  .more { margin: 7px 0 0; font-size: 12.5px; color: var(--doc-quiet); }
+</style>

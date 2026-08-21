@@ -20,7 +20,7 @@ function resumePreview() {
 
 export default defineConfig({
   site: 'https://benjamintranpugh.com',
-  integrations: [mdx(), sitemap(), resumePreview()],
+  integrations: [mdx(), sitemap({ filter: (p) => !p.includes('/portfolio-') }), resumePreview()],
   // Code blocks are styled from tokens.css in global.css. Shiki's own theme
   // would inject a second palette, so highlighting stays off site-wide.
   //

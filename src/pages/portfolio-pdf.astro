@@ -1,0 +1,402 @@
+---
+/**
+ * The portfolio as a printable sheet set: one portrait sheet per project, led
+ * by a headline and reduced to goal, method, and outcome.
+ * scripts/render-portfolio.mjs prints this route to public/portfolio.pdf with
+ * headless Edge; nothing on the site links here.
+ *
+ * Every word is read from the same MDX the site reads and quoted verbatim, so
+ * the PDF cannot drift from the drawings and nothing here is written about a
+ * project. The headline is the frontmatter `summary`, which is already the
+ * one-sentence statement of what a project is.
+ */
+import Sheet from '../layouts/Sheet.astro';
+import Frame from '../components/Frame.astro';
+import Stamp from '../components/Stamp.astro';
+import Projection from '../components/Projection.astro';
+import { SITE, printed, printProjects } from '../lib/print';
+
+const sheets = (await printProjects()).map((s) => ({
+  ...s,
+  zones: [
+    { zone: 'A', label: 'GOAL', body: s.brief.goal },
+    { zone: 'B', label: 'METHOD', body: s.brief.method },
+    { zone: 'C', label: 'OUTCOME', body: s.brief.outcome },
+  ],
+}));
+
+const TOL = 'DIMENSIONS IN MM / TOLERANCES ±0.5 UNLESS NOTED / DO NOT SCALE DRAWING';
+---
+
+<Sheet
+  title="Portfolio | Benjamin Tran-Pugh"
+  description="Print edition of the drawing set. The live portfolio is at benjamintranpugh.com."
+>
+  <main class="doc">
+    {
+      sheets.map((s) => (
+        <section class="page">
+          <Frame zones={6}>
+            <div class="head">
+              <span class="code">{s.code}</span>
+              <span class="mono">SHEET {s.sheet}</span>
+              <span class="mono date">{s.date}</span>
+            </div>
+
+            {/* what a reader who reads nothing else has to come away with */}
+            <div class="headline">
+              <h1>{s.d.title}</h1>
+              <p class="deck">{s.d.summary}</p>
+              <div class="spec">
+                {s.d.telemetry.split(' | ').map((t) => (
+                  <span class="chip">{t}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* the images get the whole middle of the sheet: a tall hero box
+                beside a column of the supporting two, so every well is close
+                to the shape of the picture in it */}
+            <div class="band">
+              <figure class="fig hero">
+                <div class="well">
+                  <img class="media fit" src={s.hero} alt={s.d.heroLabel} />
+                  <span class="cm tl" aria-hidden="true" />
+                  <span class="cm tr" aria-hidden="true" />
+                  <span class="cm bl" aria-hidden="true" />
+                  <span class="cm br" aria-hidden="true" />
+                  <span class="datum" aria-hidden="true">
+                    <span class="tri" />
+                    <span class="box">A</span>
+                  </span>
+                  <span class="nts" aria-hidden="true">NTS</span>
+                </div>
+                <figcaption>{s.d.heroLabel}</figcaption>
+              </figure>
+
+              <div class="side">
+                {s.figs.map((f, j) => (
+                  <figure class="fig">
+                    <div class="well">
+                      <img class="media fit" src={printed(f.src)} alt={f.caption} />
+                      <span class="balloon" aria-hidden="true">
+                        <span>{String(j + 1).padStart(2, '0')}</span>
+                      </span>
+                    </div>
+                    <figcaption>{f.caption}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </div>
+
+            {
+              s.zones.map((b) => (
+                <section class="brief">
+                  <h3>
+                    <span class="zone">{b.zone}</span>
+                    <span class="lab">{b.label}</span>
+                    <span class="dash" />
+                  </h3>
+                  {b.body?.kind === 'ul' ? (
+                    <ul>
+                      {b.body.items.map((t) => (
+                        <li>{t}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    b.body?.items.map((t) => <p>{t}</p>)
+                  )}
+                </section>
+              ))
+            }
+
+            <div class="foot">
+              <div class="tools">
+                <span class="mono">TOOLS</span>
+                {s.tools.map((t) => (
+                  <span class="chip">{t}</span>
+                ))}
+              </div>
+              <div class="foot-row">
+                <div class="tb">
+                  <div class="tb-row">
+                    <div class="cell grow">
+                      <span class="k">DRAWN BY</span>
+                      <span class="name">Benjamin Tran-Pugh</span>
+                      <span class="contact">benjamintranpugh@gmail.com</span>
+                    </div>
+                    <div class="cell">
+                      <span class="k">SHEET</span>
+                      <span class="big">{s.sheet}</span>
+                    </div>
+                    <div class="cell">
+                      <span class="k">DWG NO.</span>
+                      <span class="big">{s.code}</span>
+                    </div>
+                  </div>
+                  <div class="tol">{TOL}</div>
+                  <a class="cta" href={`https://${SITE}${s.path}`}>
+                    <span class="k">DETAILS</span>
+                    <span class="v">{SITE}{s.path} &rarr;</span>
+                  </a>
+                </div>
+                <div class="foot-side">
+                  <Projection stacked />
+                  <Stamp sheet={s.stamp} small />
+                </div>
+              </div>
+            </div>
+          </Frame>
+        </section>
+      ))
+    }
+  </main>
+</Sheet>
+
+<style>
+  /* ---------- page ---------- */
+  @page { size: 8.5in 11in; margin: 0; }
+  .page {
+    /* the sheet's own box, page size less the 40px margin on each side */
+    --print-w: 736px;
+    --print-h: 976px;
+    --gut: calc(var(--inset) + 1px);
+    /* what is left inside the outer border and the content margin */
+    --in-h: calc(var(--print-h) - 2 * var(--border-outer) - 2 * var(--gut));
+    width: 816px;
+    height: 1056px;
+    padding: 40px;
+    background: #fff;
+    break-after: page;
+    overflow: hidden;
+  }
+  .page:last-child { break-after: auto; }
+  /* Explicit heights, and Frame's `fixed` mode deliberately unused. Inside a
+     print fragmentation context Chrome ignores a percentage height and drops
+     the offsets on an absolutely positioned box, so the sheet either collapses
+     onto its content or slides out of its own border. Normal flow plus a
+     stated height is the one arrangement that survives. Frame itself is
+     untouched, because on the site it is correct. */
+  .page :global(.sheet) { height: var(--print-h); }
+  .page :global(.content) { margin: var(--gut); height: var(--in-h); }
+  /* Frame drops the side strips and the inner border under 768px, and a
+     portrait sheet is narrower than that. On paper all four edges are ruled. */
+  .page :global(.ticks.left),
+  .page :global(.ticks.right) {
+    display: flex;
+    bottom: auto;
+    height: calc(var(--print-h) - 2 * var(--border-outer) - 2 * var(--inset));
+  }
+  .page :global(.ticks.left) span,
+  .page :global(.ticks.right) span { flex: none; height: 16.666%; }
+  .page :global(.inner-border) { display: block; }
+  /* on screen the sheets stack on the desk, so the set can be proofed in a
+     browser before it is printed */
+  @media screen {
+    .doc {
+      background: var(--desk);
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+  }
+
+  /* ---------- shared ---------- */
+  .cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .k {
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 7.5px;
+    letter-spacing: 0.16em;
+    color: var(--label);
+  }
+  .v {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10.5px;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tol {
+    padding: 5px 10px 6px;
+    border-top: 1px solid var(--frame);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 7px;
+    letter-spacing: 0.03em;
+    color: var(--label);
+    white-space: nowrap;
+  }
+  /* stacked, not a row: a project URL is long enough that a row would
+     truncate the one thing this cell exists to carry */
+  .cta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px 9px;
+    background: var(--ink);
+  }
+  .cta .k { color: rgba(251, 252, 254, 0.7); font-weight: 500; }
+  .cta .v { font-size: 9.5px; letter-spacing: 0.02em; font-weight: 600; color: var(--paper); }
+  .furniture { display: flex; align-items: center; gap: 14px; }
+
+  /* ---------- header and headline ---------- */
+  .head {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 7px 14px;
+    border-bottom: 1px solid var(--ink);
+    flex: none;
+  }
+  .head .date { margin-left: auto; }
+
+  .headline { flex: none; padding: 12px 14px 0; }
+  .headline h1 {
+    font-size: 40px;
+    line-height: 1.02;
+    letter-spacing: -0.022em;
+    color: var(--ink);
+  }
+  /* the sentence a reader who reads nothing else takes away, so it is set
+     at deck size and in ink rather than body grey */
+  .deck {
+    margin: 8px 0 0;
+    max-width: 62ch;
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--ink);
+    text-wrap: pretty;
+  }
+  .spec { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .spec .chip {
+    background: var(--paper);
+    font-weight: 600;
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: var(--red);
+  }
+
+  /* ---------- figures ---------- */
+  /* The band takes every pixel the text does not, so the pictures are the
+     largest thing on the sheet. A full-width hero well was 685x116, an aspect
+     of 5.9 holding photographs shaped about 1.4, which is where all the white
+     came from: the well now sits at roughly 1.4 itself and the picture fills
+     it. The supporting two stack beside it at a shape that suits them. */
+  .band { flex: 1; min-height: 238px; display: flex; gap: 12px; padding: 12px 14px 0; }
+  .fig.hero { flex: 1; min-width: 0; border: 1.5px solid var(--ink); }
+  .side { width: 208px; flex: none; display: flex; flex-direction: column; gap: 12px; }
+  .side .fig { flex: 1; min-height: 0; }
+
+  .cm { position: absolute; width: 14px; height: 14px; }
+  .cm::before, .cm::after { content: ''; position: absolute; background: var(--ink); }
+  .cm::before { left: 50%; top: 0; bottom: 0; width: 1px; }
+  .cm::after { top: 50%; left: 0; right: 0; height: 1px; }
+  .cm.tl { left: 6px; top: 6px; }
+  .cm.tr { right: 6px; top: 6px; }
+  .cm.bl { left: 6px; bottom: 6px; }
+  .cm.br { right: 6px; bottom: 6px; }
+  .datum {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+  }
+  .datum .tri {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 9px solid var(--ink);
+  }
+  .datum .box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 9px;
+    color: var(--ink);
+  }
+  .nts {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 2px 6px;
+    border: 1px solid var(--frame);
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 8.5px;
+    letter-spacing: 0.14em;
+    color: var(--label);
+  }
+
+  /* ---------- goal / method / outcome ---------- */
+  .brief { flex: none; padding: 9px 14px 0; }
+  .brief h3 { display: flex; align-items: center; gap: 11px; margin-bottom: 6px; }
+  .zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex: none;
+    border: 1.5px solid var(--ink);
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 10px;
+    color: var(--ink);
+  }
+  .lab {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--ink);
+  }
+  /* a plain hairline, not the dashed gradient the site uses: a gradient
+     prints as a PDF shading pattern and not every viewer draws it */
+  .dash { flex: 1; height: 1px; background: var(--frame); }
+  .brief p, .brief ul { margin: 0; color: var(--body); font-size: 12px; line-height: 1.5; }
+  .brief ul { padding-left: 18px; }
+  .brief li { margin: 3px 0; }
+  .brief li::marker { color: var(--red); }
+
+  /* ---------- footer ---------- */
+  .foot { flex: none; padding: 10px 14px 0; }
+  .tools { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+  .tools .chip { padding: 4px 7px; font-size: 9.5px; }
+  .tb { border: 1px solid var(--ink); }
+  .tb .tol { border-top: 1px solid var(--frame); }
+  .tb-row { display: flex; }
+  .tb .cell { width: 104px; padding: 6px 10px; border-right: 1px solid var(--frame); }
+  .tb .cell.grow { flex: 1; width: auto; }
+  .tb .cell:last-child { border-right: 0; }
+  .name { font-size: 13.5px; font-weight: 500; color: var(--ink); }
+  .contact { font-family: var(--font-mono); font-size: 9px; color: var(--body-2); }
+  .big { font-family: var(--font-mono); font-weight: 600; font-size: 14px; color: var(--ink); }
+  /* the furniture sits beside the title block, not under it: stacked, the
+     footer costs the sheet another 60px it does not have */
+  .foot-row { display: flex; align-items: flex-start; gap: 14px; }
+  .tb { flex: 1; min-width: 0; }
+  .foot-side {
+    width: 166px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 13px;
+    padding-top: 3px;
+  }
+</style>
