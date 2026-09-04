@@ -607,18 +607,25 @@ const first = sheets[0];
   .cta .second { width: 124px; display: flex; align-items: center; }
 
   /* ---- bookmark tabs ---- */
+  /* the strip is pinned to the sheet's full height, not centred on a nominal
+     one, so on a short screen (a 16:9 laptop) the tabs shrink to fit instead
+     of running off the top and bottom of the sheet */
   .tabs {
     position: absolute;
     left: 100%;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 0;
+    bottom: 0;
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 3px;
   }
   .tab {
     position: relative;
+    container-type: size;
     height: 80px;
+    flex: 0 1 auto;
+    min-height: 0;
     width: var(--tab-w);
     overflow: hidden;
     display: flex;
@@ -644,7 +651,17 @@ const first = sheets[0];
     color: var(--ink);
     opacity: 0.62;
     white-space: nowrap;
-    padding: 14px 0 6px;
+    /* slack, not padding: what is spare here is what a shrunken tab has left
+       for the label before it clips */
+    padding: 8px 0 4px;
+  }
+  /* a shrunken tab has less room for its vertical label than the longest one
+     needs, so the label tightens with the tab rather than clipping */
+  @container (max-height: 78px) {
+    .tab .nm { padding: 3px 0; letter-spacing: 0.03em; }
+  }
+  @container (max-height: 70px) {
+    .tab .nm { font-size: 8px; letter-spacing: 0.02em; }
   }
   /* the sheet number rides outside the tab as a balloon, the same glyph the
      figure field uses, so the tab strip reads as callouts on the drawing */
@@ -757,8 +774,8 @@ const first = sheets[0];
     /* tabs become a scrollable chip strip under the header */
     .tabs {
       position: static;
-      transform: none;
       flex-direction: row;
+      justify-content: flex-start;
       gap: 6px;
       overflow-x: auto;
       padding: 0 16px 14px;
@@ -766,6 +783,7 @@ const first = sheets[0];
       order: -1;
     }
     .tab {
+      container-type: normal;
       height: auto;
       width: auto;
       min-height: 44px;
