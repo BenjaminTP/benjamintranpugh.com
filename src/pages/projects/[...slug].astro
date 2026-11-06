@@ -25,6 +25,8 @@ export async function getStaticPaths() {
 const { project, index, all } = Astro.props;
 const { Content } = await render(project);
 const d = project.data;
+// the project page may lead with a different photo than the index sheet
+const hero = d.pageHero ?? { src: d.cover, label: d.heroLabel, poster: d.heroPoster };
 const id = sheetOf(index, all.length);
 const { tools, date } = toolsAndDate(d.tags);
 const next = all[(index + 1) % all.length];
@@ -44,7 +46,7 @@ const FAIL = /OVERDAMPED|FAILED|ABANDONED/;
             <a href="mailto:benjamintranpugh@gmail.com">benjamintranpugh@gmail.com</a>
             <a href="mailto:btranpug@uwaterloo.ca">btranpug@uwaterloo.ca</a>
             <a href="https://github.com/BenjaminTP">github.com/BenjaminTP</a>
-            <a href="/resume/">Resume →</a>
+            <a class="resume" href="/resume/">Resume →</a>
           </div>
         </div>
 
@@ -73,8 +75,8 @@ const FAIL = /OVERDAMPED|FAILED|ABANDONED/;
         </div>
 
         <div class="hero">
-          <div class="well" data-zoom={d.cover} data-cap={d.heroLabel}>
-            <Media src={d.cover} alt={d.heroLabel} poster={d.heroPoster} mode="fit" />
+          <div class="well" data-zoom={hero.src} data-cap={hero.label}>
+            <Media src={hero.src} alt={hero.label} poster={hero.poster} mode="fit" />
             <span class="cm tl" aria-hidden="true"></span>
             <span class="cm tr" aria-hidden="true"></span>
             <span class="cm bl" aria-hidden="true"></span>
@@ -86,7 +88,7 @@ const FAIL = /OVERDAMPED|FAILED|ABANDONED/;
             <div class="stamp-slot"><Stamp sheet={id.stamp} /></div>
           </div>
           <div class="hero-cap">
-            <span>GENERAL VIEW / {d.heroLabel}</span>
+            <span>GENERAL VIEW / {hero.label}</span>
             <span class="nts">NTS</span>
           </div>
         </div>
@@ -159,7 +161,8 @@ const FAIL = /OVERDAMPED|FAILED|ABANDONED/;
   }
   .back { font-weight: 500; letter-spacing: 0.12em; }
   .back span { color: var(--label); }
-  .contacts { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+  .contacts { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; padding: 4px 10px; background: var(--fill-1); }
+  .contacts .resume { text-decoration: underline; text-underline-offset: 2px; }
 
   .title-block { display: flex; border-bottom: 1px solid var(--ink); }
   .tb-main { flex: 1; padding: 22px 20px 20px; border-right: 1px solid var(--ink); min-width: 0; }

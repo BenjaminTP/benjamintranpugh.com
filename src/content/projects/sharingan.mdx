@@ -1,0 +1,83 @@
+---
+title: Sharingan
+order: 0.25
+summary: A scout drone that finds people with a camera and radar and draws them through the wall in a Meta Quest headset, built by a team of four at Hack the North 2026.
+telemetry: "HACK THE NORTH 2026 | TEAM OF 4"
+tags: [Raspberry Pi 5, Betaflight, Radar, Computer Vision, Unreal Engine, Meta Quest 3S, Sep 2026]
+cover: sharingan/installed.jpg
+github: https://github.com/EVAnunit1307/Sharingan
+related: { href: "https://devpost.com/software/sharingan", label: "DEVPOST ↗" }
+short: SHARINGAN
+heroLabel: "INSTALLED / CAMERA, RADAR AND WI-FI CSI SENSOR, AND PI ON THE FRAME"
+pageHero: { src: sharingan/team.jpg, label: "THE TEAM / WITH THE DRONE AND THE HEADSET" }
+indexFigures: [sharingan/xray-hallway.mp4, sharingan/xray-kitchen.mp4]
+---
+
+## Overview
+
+Sharingan is a scout drone that flies ahead of a person, finds people behind walls and through openings with a camera and radar, and shows them to the operator in a Meta Quest 3S headset, placed where they actually are. We built it as a team of four at Hack the North 2026. Search and rescue was the first use case: rescuers know someone is trapped inside a building, but not where.
+
+My part was the computer vision training, the radar and camera integration, the sensor handoff from the Raspberry Pi 5 to the Meta Quest, and the drone tuning and flight testing.
+
+<Figure src="sharingan/installed.jpg" caption="INSTALLED / CAMERA, RADAR AND WI-FI CSI SENSOR, AND PI ON THE FRAME" />
+
+## Flight controls
+
+The airframe flies on a Betaflight F4 flight controller. The radio link and the sensing payload are two separate systems: the flight controller only ever sees stick and switch data, never the sensor stream. That keeps the flight-critical link simple and fast, and means the payload can fail without touching control authority.
+
+| Item | Value |
+|---|---|
+| Flight controller | Betaflight (F4) |
+| Radio protocol | SBUS |
+| ESC protocol | DSHOT |
+| Telemetry | None. SBUS is one-way, with no return channel |
+
+The receiver is bound once on the bench to a single transmitter, so it ignores every other radio on the same protocol. After binding there is no handshake: it streams raw channel data to the flight controller over one serial line, every frame. We checked the link at the signal level with a logic analyzer on the receiver's data line. The trace sits flat until a switch on the transmitter is toggled, then fills with a continuous pulse train.
+
+<Figure src="sharingan/radio-link.mp4" caption="RADIO LINK / LOGIC ANALYZER ON THE RECEIVER DATA LINE" />
+
+## Bench checks
+
+Before the payload went anywhere near the airframe, the base flight stack was checked on its own with the props off. Each motor was driven individually from the ESC outputs to confirm direction, spin-up, and that the motor order matched the configured layout. Then the frame was rotated by hand through roll, pitch, and yaw while the configurator's 3D model tracked it, which confirms the IMU the flight controller flies off has no swapped or inverted axes before it is trusted to self-level.
+
+<Compare cols={2}>
+  <Figure src="sharingan/motor-spin.mp4" caption="MOTOR CHECK / PROPS OFF, ONE MOTOR AT A TIME" />
+  <Figure src="sharingan/imu-feed.mp4" caption="IMU CHECK / FRAME ROTATED BY HAND" />
+</Compare>
+
+## Sensor mount
+
+The triangulation only holds if every sensor sits at a fixed, known position relative to the airframe. A 3D-printed bracket does that: a central column for the camera and radar pair and a perpendicular side plate for the secondary module, all on one mounting pattern so the offsets between sensors never change. It was designed and sliced in Bambu Studio.
+
+<Compare cols={2}>
+  <Figure src="sharingan/bracket.png" caption="SENSOR BRACKET / ISOMETRIC" />
+  <Figure src="sharingan/mount-printing.mp4" caption="THE MOUNT COMING OFF THE BED" />
+</Compare>
+
+The stack, bottom to top: the battery, the drone frame, the printed mount bolted to it, and the camera, the radar and Wi-Fi CSI sensor, and the Raspberry Pi all on that one mount.
+
+## Radar mapping
+
+The first working version ran on an LD240 radar sensor and plotted raw detections onto a flat, top-down map. Each return was a range and a bearing from the drone with no elevation, so a person standing and a person lying down looked the same. It proved the pipeline end to end, radar return in and a point on a map out.
+
+<Figure src="sharingan/radar-map.mp4" caption="LEFT: WALKING THE SENSOR'S FIELD / RIGHT: ILLUSTRATION OF RANGE FROM THE SENSOR, NOT RECORDED OUTPUT" />
+
+The second stage used the elevation angle each LD240 return already carries. Projecting range, bearing, and elevation into Cartesian coordinates on the Pi gives a 3D position with no second sensor. The point stream goes to the Quest as a lightweight UDP feed, where each detection is anchored to the headset's room-scale origin, so the points hold still while the operator walks around them.
+
+## Triangulation
+
+The camera and the radar measure different things, and the fusion leans on that. The camera gives bearing: the angle to a detected person, from where they fall in the frame relative to the camera's known field of view. The radar gives range, independent of lighting or whether the lens can see the target at all. Neither alone gives a position; together they are exactly the two numbers a position needs.
+
+We chose this over stereo cameras on purpose. With two cameras that close together, depth error grows with the square of distance, so it fails right at the ranges where it matters.
+
+The headset's origin is the operator. The drone's position relative to the operator is D. In the drone's own frame, the camera's bearing and the radar's range give the person's offset. Rotating that offset by the drone's heading and adding D gives P, the person's position relative to the operator, which is where the headset draws them, one point per detection, every cycle. Pointed straight down, the same range and angle give the drone's height above the floor instead, filling the role a barometer normally would.
+
+<Figure src="sharingan/triangulation.svg" caption="TRIANGULATION / PLAN VIEW, ORIGIN AT THE OPERATOR" />
+
+## In the headset
+
+The HUD is an Unreal Engine app on the Quest 3S, and every detection lands in the same world frame as the operator, so a tracked person is drawn through the wall at their actual position and height. Each contact carries its age. Once it passes the stale threshold the HUD reads `SENSOR OFFLINE` and the point is dropped rather than held, because a confident stale position is worse than none.
+
+<Figure src="sharingan/xray-hallway.mp4" caption="HEADSET VIEW / CONTACT TRACKED THROUGH THE WALL" />
+
+<Figure src="sharingan/xray-kitchen.mp4" caption="OUTSIDE VIEW (TOP) AND HEADSET VIEW (BOTTOM) / THE SAME PERSON" />

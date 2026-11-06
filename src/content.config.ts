@@ -19,6 +19,8 @@ const projects = defineCollection({
     cover: z.string(), // hero media, relative to public/images/
     heroLabel: z.string(), // caption bar under the hero
     heroPoster: z.string().optional(), // must not duplicate a figure
+    // optional project-page hero when it should differ from the index cover
+    pageHero: z.object({ src: z.string(), label: z.string() }).optional(),
     // Which body figures appear on the index sheet, in the order given. A
     // drawing carries the hero plus at most two others; more than that and the
     // field turns to clutter. Omit for a project whose body already has two.

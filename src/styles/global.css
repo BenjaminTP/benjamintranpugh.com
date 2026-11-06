@@ -291,10 +291,26 @@ a:hover { color: var(--red); }
 .prose mjx-container { color: var(--ink); }
 .prose mjx-container[jax='SVG'][display='true'] {
   display: block;
+  position: relative;
   text-align: left;
-  margin: 0;
+  margin: 18px 0;
+  padding: 26px 16px 14px;
+  border: 1px solid var(--frame);
+  background: var(--well);
   overflow-x: auto;
   overflow-y: hidden;
+}
+/* same corner label as .well-block > .tag */
+.prose mjx-container[jax='SVG'][display='true']::before {
+  content: 'CALCULATION';
+  position: absolute;
+  left: 12px;
+  top: 7px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 8.5px;
+  letter-spacing: 0.18em;
+  color: var(--label);
 }
 
 /* data tables, styled like a title block */

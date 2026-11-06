@@ -13,12 +13,13 @@ import Frame from './Frame.astro';
 
 // Title-block values are all true. A drawing's title block is the one place a
 // reader expects hard fact, so nothing here is invented (see CLAUDE.md).
+const { total } = Astro.props;
 const cells = [
   ['DRAWN BY', 'B. TRAN-PUGH'],
   ['DISCIPLINE', 'MECHANICAL'],
   ['INSTITUTION', 'UNIV. OF WATERLOO'],
   ['DWG NO.', 'BTP-000'],
-  ['SHEET', '00 OF 08'],
+  ['SHEET', `00 OF ${String(total).padStart(2, '0')}`],
   ['SCALE', 'NTS'],
   ['UNITS', 'MM'],
   ['PROJECTION', 'THIRD ANGLE'],
