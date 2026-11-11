@@ -237,23 +237,32 @@ const first = sheets[0];
       <Lightbox />
       <Detail />
 
-      <div class="tabs" role="tablist" aria-label="Project sheets">
-        {
-          sheets.map((s, i) => (
-            <button
-              class="tab"
-              role="tab"
-              data-tab={i}
-              aria-selected={i === 0 ? 'true' : 'false'}
-              tabindex={i === 0 ? 0 : -1}
-            >
-              <span class="n" aria-hidden="true">{s.n}</span>
-              <span class="nm">{s.p.data.short}</span>
-              <span class="bar" aria-hidden="true"></span>
-            </button>
-          ))
-        }
-      </div>
+      {
+        /* the second strip is the phone's bottom mirror of the first: a visual
+           copy only, so assistive tech and the keyboard see one tab list */
+        [false, true].map((foot) => (
+          <div
+            class={foot ? 'tabs foot' : 'tabs'}
+            role={foot ? undefined : 'tablist'}
+            aria-label={foot ? undefined : 'Project sheets'}
+            aria-hidden={foot ? 'true' : undefined}
+          >
+            {sheets.map((s, i) => (
+              <button
+                class="tab"
+                role={foot ? undefined : 'tab'}
+                data-tab={i}
+                aria-selected={i === 0 ? 'true' : 'false'}
+                tabindex={foot || i !== 0 ? -1 : 0}
+              >
+                <span class="n" aria-hidden="true">{s.n}</span>
+                <span class="nm">{s.p.data.short}</span>
+                <span class="bar" aria-hidden="true"></span>
+              </button>
+            ))}
+          </div>
+        ))
+      }
     </div>
   </main>
 </Sheet>
@@ -264,15 +273,12 @@ const first = sheets[0];
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 22px 20px;
+    padding: var(--my) var(--mx);
   }
-  /* the tab column lives outside the sheet, so reserve its width here or it
-     runs off the right edge at 100% zoom */
-  .rig {
-    position: relative;
-    width: min(var(--sheet-w), 100% - var(--tab-w) - 12px);
-  }
-  .sheet-wrap :global(.sheet) { height: min(var(--sheet-h), calc(100vh - 44px)); }
+  /* the sheet fills the desk inside the wood margin; the tab column hangs
+     into the right margin */
+  .rig { position: relative; width: 100%; }
+  .sheet-wrap :global(.sheet) { height: calc(100dvh - 2 * var(--my)); }
   .sheet-wrap[hidden] { display: none; }
 
   /* ---- header ---- */
@@ -647,6 +653,7 @@ const first = sheets[0];
     justify-content: center;
     gap: 3px;
   }
+  .tabs.foot { display: none; }
   .tab {
     position: relative;
     container-type: size;
@@ -726,7 +733,7 @@ const first = sheets[0];
 
   /* ================= mobile ================= */
   @media (max-width: 768px) {
-    .desk { padding: 0; overflow-x: hidden; }
+    .desk { padding: var(--my) var(--mx); overflow-x: hidden; }
     /* flex so the tab strip can hop above the sheet with order */
     .rig { width: 100%; display: flex; flex-direction: column; }
     .sheet-wrap { min-width: 0; }
@@ -807,10 +814,22 @@ const first = sheets[0];
       justify-content: flex-start;
       gap: 6px;
       overflow-x: auto;
-      padding: 0 16px 14px;
-      background: var(--paper);
+      /* the chips lie on the wood, flush with the sheet edges; still swipeable */
+      padding: 0 0 var(--my);
+      scrollbar-width: none;
       order: -1;
     }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tabs.foot { display: flex; order: 0; padding: var(--my) 0 0; }
+    /* each edge fades into the wood while there are more tabs past it */
+    .tabs {
+      --fl: 0px;
+      --fr: 56px;
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fl), #000 calc(100% - var(--fr)), transparent);
+      mask-image: linear-gradient(to right, transparent, #000 var(--fl), #000 calc(100% - var(--fr)), transparent);
+    }
+    .tabs.start { --fl: 56px; }
+    .tabs.end { --fr: 0px; }
     .tab {
       container-type: normal;
       height: auto;
@@ -836,7 +855,9 @@ const first = sheets[0];
 <script>
   const rig = document.querySelector('.rig')!;
   const sheets = [...rig.querySelectorAll<HTMLElement>('.sheet-wrap')];
-  const tabs = [...rig.querySelectorAll<HTMLButtonElement>('.tab')];
+  const strips = [...rig.querySelectorAll<HTMLElement>('.tabs')];
+  const tabs = [...strips[0].querySelectorAll<HTMLButtonElement>('.tab')];
+  const mirror = [...strips[1].querySelectorAll<HTMLButtonElement>('.tab')];
 
   let cur = 0;
 
@@ -849,10 +870,12 @@ const first = sheets[0];
       t.tabIndex = on ? 0 : -1;
       if (on && focus) t.focus();
     });
+    mirror.forEach((t, k) => t.setAttribute('aria-selected', k === i ? 'true' : 'false'));
     // a hidden sheet's videos are paused by the browser; start the visible one
     for (const v of sheets[i].querySelectorAll('video')) v.play?.().catch(() => {});
   }
 
+  mirror.forEach((tab, i) => tab.addEventListener('click', () => select(i)));
   tabs.forEach((tab, i) => {
     tab.addEventListener('click', () => select(i));
     tab.addEventListener('keydown', (e) => {
@@ -909,7 +932,27 @@ const first = sheets[0];
 
   // Desktop: a vertical wheel walks the stack. The neighbouring tab slides out
   // of the strip as the gesture builds, then keeps going when it commits.
-  const strip = rig.querySelector<HTMLElement>('.tabs')!;
+  const strip = strips[0];
+  // Phone chip strips: top and bottom scroll as one, and each edge fades only
+  // while there are tabs past it.
+  const edges = (s: HTMLElement) => {
+    s.classList.toggle('start', s.scrollLeft > 2);
+    s.classList.toggle('end', s.scrollLeft + s.clientWidth >= s.scrollWidth - 2);
+  };
+  for (const s of strips) {
+    s.addEventListener(
+      'scroll',
+      () => {
+        for (const o of strips) {
+          if (o !== s) o.scrollLeft = s.scrollLeft;
+          edges(o);
+        }
+      },
+      { passive: true },
+    );
+  }
+  addEventListener('resize', () => strips.forEach(edges));
+  strips.forEach(edges);
   const splash = document.querySelector<HTMLInputElement>('#splash-dismiss');
   // the title sheet covers the index until it is dismissed: no paging behind it
   const covered = () => !!splash && !splash.checked;
@@ -953,9 +996,12 @@ const first = sheets[0];
   // Phone: swipe sideways to page the stack like a photo reel.
   let x0 = 0;
   let y0 = 0;
+  let onStrip = false;
   window.addEventListener(
     'touchstart',
     (e) => {
+      // scrolling a tab strip sideways is not a page turn
+      onStrip = !!(e.target as Element).closest?.('.tabs');
       x0 = e.touches[0].clientX;
       y0 = e.touches[0].clientY;
     },
@@ -966,7 +1012,7 @@ const first = sheets[0];
     (e) => {
       const dx = e.changedTouches[0].clientX - x0;
       const dy = e.changedTouches[0].clientY - y0;
-      if (covered() || Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      if (covered() || onStrip || Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
       const next = cur + (dx < 0 ? 1 : -1);
       if (next < 0 || next >= sheets.length) return;
       const el = sheets[next];

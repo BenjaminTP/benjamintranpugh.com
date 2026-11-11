@@ -29,7 +29,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="theme-color" content="#dfe5ee" />
+    <meta name="theme-color" content="#4b2e1d" />
     <meta property="og:title" content={title} />
     {description && <meta property="og:description" content={description} />}
     <meta property="og:type" content="website" />
@@ -51,5 +51,55 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
   </head>
   <body>
     <slot />
+    {/* drafting tools lying on the desk in the side margins; decoration only */}
+    <div class="desk-tools" aria-hidden="true">
+      <svg class="pencil" width="240" height="30" viewBox="0 0 240 30">
+        <polygon points="2,15 12,13.5 12,16.5" fill="#3a3a3a" />
+        <polygon points="12,11 26,8 26,22 12,19" fill="#b9bec6" />
+        <rect x="26" y="7" width="46" height="16" rx="2" fill="#2a2d33" />
+        <g stroke="#4a4e57" stroke-width="1.1"><line x1="32" y1="7" x2="32" y2="23" /><line x1="38" y1="7" x2="38" y2="23" /><line x1="44" y1="7" x2="44" y2="23" /><line x1="50" y1="7" x2="50" y2="23" /><line x1="56" y1="7" x2="56" y2="23" /><line x1="62" y1="7" x2="62" y2="23" /></g>
+        <rect x="72" y="8" width="150" height="14" rx="2" fill="#2f5d8a" />
+        <rect x="72" y="10" width="150" height="3" fill="rgba(255,255,255,.22)" />
+        <rect x="176" y="4" width="40" height="4" rx="2" fill="#c9ced6" />
+        <rect x="222" y="9" width="14" height="12" rx="2" fill="#c9ced6" />
+      </svg>
+      <svg class="eraser" width="78" height="42" viewBox="0 0 78 42">
+        <rect x="2" y="6" width="72" height="30" rx="4" fill="#f4f4f1" />
+        <rect x="24" y="4" width="34" height="34" rx="2" fill="#2f5fa8" />
+        <rect x="24" y="9" width="34" height="2" fill="rgba(255,255,255,.35)" />
+      </svg>
+      <svg class="ruler" width="380" height="40" viewBox="0 0 380 40" font-family="ui-monospace, monospace">
+        <defs>
+          <pattern id="rule-ticks" width="6" height="40" patternUnits="userSpaceOnUse"><line x1="0.5" y1="2" x2="0.5" y2="8" stroke="#1f2a3a" stroke-width="1" /></pattern>
+          <pattern id="rule-ticks-big" width="30" height="40" patternUnits="userSpaceOnUse"><line x1="0.5" y1="2" x2="0.5" y2="14" stroke="#1f2a3a" stroke-width="1" /></pattern>
+        </defs>
+        <rect x="2" y="2" width="374" height="34" rx="2" fill="#e8743b" fill-opacity="0.5" stroke="#e8743b" stroke-width="1.2" />
+        <line x1="4" y1="33" x2="374" y2="33" stroke="rgba(255,255,255,.55)" stroke-width="1.2" />
+        <rect x="12" y="2" width="356" height="20" fill="url(#rule-ticks)" />
+        <rect x="12" y="2" width="356" height="20" fill="url(#rule-ticks-big)" />
+        <text x="14" y="28" font-size="7" fill="#1f2a3a">0</text>
+        <text x="341" y="28" font-size="7" fill="#1f2a3a">300 MM</text>
+      </svg>
+    </div>
   </body>
 </html>
+
+<style>
+  /* above the splash (z 50) so the tools stay put while the title sheet peels */
+  .desk-tools { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+  .desk-tools svg {
+    position: absolute;
+    transform: translate(-50%, -50%) rotate(var(--r)) scale(var(--tool-scale));
+  }
+  .pencil { --r: 80deg; left: calc(var(--mx) / 2); top: 36%; filter: drop-shadow(4px 6px 4px rgba(0, 0, 0, 0.35)); }
+  .eraser { --r: 76deg; left: calc(var(--mx) / 2); top: 74%; filter: drop-shadow(3px 5px 4px rgba(0, 0, 0, 0.3)); }
+  /* centred in the wood right of the index bookmark tabs (tab + 7px pull) */
+  .ruler {
+    --r: 88deg;
+    left: calc(100% - (var(--mx) - var(--tab-w) - 7px) / 2);
+    top: 50%;
+    filter: drop-shadow(3px 6px 4px rgba(0, 0, 0, 0.3));
+  }
+  @media (max-width: 768px) { .desk-tools { display: none; } }
+  @media print { .desk-tools { display: none; } }
+</style>

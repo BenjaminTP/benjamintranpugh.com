@@ -89,8 +89,8 @@ const cells = [
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 22px 20px;
-    background: var(--desk);
+    padding: var(--my) var(--mx);
+    background: var(--desk-bg);
     cursor: pointer;
     perspective: 2000px;
     perspective-origin: 50% 50%;
@@ -98,8 +98,8 @@ const cells = [
     overflow: hidden;
   }
   .stage {
-    width: min(var(--sheet-w), 100% - var(--tab-w) - 12px);
-    height: min(var(--sheet-h), calc(100vh - 44px));
+    width: 100%;
+    height: calc(100dvh - 2 * var(--my));
     transform-origin: 50% 50%;
     transform-style: preserve-3d;
   }
@@ -332,7 +332,7 @@ const cells = [
   }
 
   @media (max-width: 768px) {
-    .splash { padding: 0; }
+    .splash { padding: var(--my) var(--mx); }
     .stage { width: 100%; height: 100%; }
     /* Frame drops its fixed positioning here, so .plate has no parent height
        to fill. Let the name take the slack and the title block flow under it

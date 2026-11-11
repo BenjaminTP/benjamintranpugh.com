@@ -6,7 +6,14 @@
    ============================================================ */
 :root {
   /* ---- color ---- */
-  --desk: #dfe5ee;        /* behind the sheet */
+  --desk: #4b2e1d;        /* walnut, behind the sheet */
+  /* the desk: warm light pool, vignette, then the wood */
+  --desk-bg:
+    radial-gradient(ellipse 70% 60% at 38% 30%, rgba(255, 236, 200, 0.12), transparent 70%),
+    radial-gradient(ellipse 85% 80% at 50% 48%, transparent 55%, rgba(0, 0, 0, 0.38)),
+    url('/images/walnut.webp') center / cover no-repeat,
+    var(--desk);
+  --sheet-shadow: 0 22px 44px rgba(0, 0, 0, 0.38), 0 3px 6px rgba(0, 0, 0, 0.3);
   --paper: #fbfcfe;       /* the sheet itself */
   --well: #ffffff;        /* figure wells */
   --ink: #12325e;         /* borders, headings, primary text */
@@ -34,8 +41,10 @@
   --border-inner: 1px;
   --inset: 22px;          /* gap between outer and inner border */
   --tick: 19px;           /* tick strip thickness */
-  --sheet-w: 1180px;      /* index sheet target width */
-  --sheet-h: 812px;       /* index sheet target height */
+  /* wood margin around the sheet: wider at the sides, where the tools lie */
+  --mx: 140px;
+  --my: 28px;
+  --tool-scale: 1;
   --tab-w: 34px;          /* bookmark tab width, reserved beside the sheet */
   --hero-col: 388px;      /* index hero column */
   --notes-h: 214px;     /* index bottom strip */
@@ -50,3 +59,8 @@
   --t-fade-out: 0.3s;
   --t-fade-in: 0.35s;
 }
+
+@media (max-width: 1599px) { :root { --mx: 120px; --my: 24px; --tool-scale: 0.85; } }
+@media (max-width: 1199px) { :root { --mx: 96px; --my: 20px; --tool-scale: 0.7; } }
+/* phones keep their stacked layout, with a thin strip of wood around the sheet */
+@media (max-width: 768px) { :root { --mx: 10px; --my: 10px; } }

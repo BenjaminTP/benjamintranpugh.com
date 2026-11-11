@@ -47,6 +47,15 @@ body {
   font-size: 15.5px;
   line-height: 1.6;
 }
+/* the desk is pinned to the viewport so the wood never stretches down a long page */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--desk-bg);
+  pointer-events: none;
+}
 
 img, video { max-width: 100%; display: block; }
 h1, h2, h3, h4 { line-height: 1.15; margin: 0; font-weight: 600; }
